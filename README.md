@@ -1,1 +1,1 @@
-# cafe-menu-generaot
+# cafe-menu-generator
