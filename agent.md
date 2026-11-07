@@ -64,3 +64,9 @@ Other unresolved decisions: accurate full catalog count/data; secure Supabase/ho
 - [ ] Revise full architecture spec and threat model; obtain approval.
 - [ ] Write implementation plan per writing-plans method.
 - [ ] Build, test real menu density, secure publish and continuous portrait playback.
+
+## User review correction — 2026-11-07, after seeing combined two-screen preview
+
+The user explicitly rejected the current visual treatment as **too much empty space and tiny product images**. Merely recreating the old text menu with miniature icons does not satisfy the purpose. The system must make it visually obvious **what drinks actually look like** on Screen 1; Screen 2 must present a striking, product-dominant, cinematic individual advertisement, not a small cup floating amid blank space. Keep the all-items-at-once requirement for Screen 1. Treat the existing two-column tiny-icon mockup as an **unapproved feasibility prototype**, not the approved final design. Focus on image-led composition and efficient use of the portrait screen; photographs must be prominent. Only 3 real photos have been supplied so far and they cannot be misrepresented as 23 different beverages.
+
+**Unresolved layout trade-off for owner approval:** (A) a dense photo-first grid showing every product, with short name and price and less ingredient detail; or (B) a full legible price catalog with a smaller number of significantly larger photo features. The user wants both strong photography and complete immediate browsing, so do not presume the balance. Screen 2 should dedicate most available area to the featured drink (with visible bottom thumbnail rail), not large empty margins. Do not finalize design or claim this visual correction implemented until reviewed.
