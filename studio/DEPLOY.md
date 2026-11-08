@@ -63,3 +63,6 @@ The owner deployed the app at **https://cafe-menu-generator.raj-techai2026.worke
 The code in `studio/cloud.js` now passes `options.emailRedirectTo` with the hosted URL for future signups. A GitHub push doesn't guarantee the Worker has redeployed: check Cloudflare Deployments for the commit and redeploy manually if your Worker isn't linked to GitHub.
 
 **2026-11-07 Supabase check:** one Auth user existed and its `email_confirmed_at` field was populated. No unconfirmed users remained. No account required manual bypass or auto-confirmation. An email-confirmation link opening localhost **after** successful verification is a redirect configuration issue, not necessarily an account-confirmation failure. Existing user should sign in on the production URL.
+
+## TV setup, printable menus and QR codes
+See [TV_PRINT_QR.md](TV_PRINT_QR.md) for published screen links, Samsung browser steps, full-menu Print / Save as PDF, and owner-managed menu/Google-review QR codes. Google review URL is intentionally not prefilled: supply it through the owner's official Google Business Profile.

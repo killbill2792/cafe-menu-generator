@@ -6,6 +6,7 @@
   if(!window.SEIYUN_CONFIG)return;
   const ui=()=>document.querySelector('#app');
   const ownerFromURL=new URLSearchParams(location.search).get('owner');
+  const publicMenuMode=new URLSearchParams(location.search).get('catalog')==='1';
   let ownerId=ownerFromURL,saveQueue=Promise.resolve(),pollTimer=null,authBound=false,editorBound=false;
   const oldRenderPublished=renderPublishedPage;
   const oldNav=nav;
@@ -46,11 +47,22 @@
   };
   async function cloudMain(){if(!cloud){ui().innerHTML='<main class="signin-page"><div class="signin-card">Online library is unavailable. Check your internet connection and reload.</div></main>';return;}
     try{
+      if(publicMenuMode){
+        if(!ownerId){ui().textContent='Missing menu link.';return;}
+        const refresh=async()=>{
+          try{const next=await cloud.getPublished(ownerId);if(next){published=next;try{localStorage.setItem('seiyun:last-good:'+ownerId,JSON.stringify(next));}catch{}}}
+          catch(e){if(!published)try{published=JSON.parse(localStorage.getItem('seiyun:last-good:'+ownerId)||'null');}catch{published=null;}}
+          window.seiyunExtras.renderPublicCatalog(published);
+        };
+        await refresh();
+        if(!pollTimer)pollTimer=setInterval(refresh,window.SEIYUN_CONFIG.refreshMs||30000);
+        return;
+      }
       if(screenQuery){if(!ownerId){ui().textContent='No screen owner specified.';return;}
         if(screenMode==='draft'){const u=await cloud.getUser();if(!u||u.id!==ownerId){authEvents();loginScreen('Please sign in as the owner to preview this private draft.');return;}draft=await cloud.getDraft();}
-        else {try{published=await cloud.getPublished(ownerId);if(published)localStorage.setItem('seiyun:last-good:'+ownerId,JSON.stringify(published));}catch(e){try{published=JSON.parse(localStorage.getItem('seiyun:last-good:'+ownerId)||'null')}catch(_){published=null}}}
+        else {try{published=await cloud.getPublished(ownerId);if(published)try{localStorage.setItem('seiyun:last-good:'+ownerId,JSON.stringify(published));}catch{}}catch(e){try{published=JSON.parse(localStorage.getItem('seiyun:last-good:'+ownerId)||'null')}catch(_){published=null}}}
         await renderTVView();
-        if(screenMode==='published'&&!pollTimer)pollTimer=setInterval(async()=>{try{const next=await cloud.getPublished(ownerId);if(next){localStorage.setItem('seiyun:last-good:'+ownerId,JSON.stringify(next));if(next.revision!==published?.revision){published=next;await renderTVView();}}}catch(e){/* Keep last successfully loaded published menu visible. */}},window.SEIYUN_CONFIG.refreshMs||30000);
+        if(screenMode==='published'&&!pollTimer)pollTimer=setInterval(async()=>{try{const next=await cloud.getPublished(ownerId);if(next){try{localStorage.setItem('seiyun:last-good:'+ownerId,JSON.stringify(next));}catch{}if(next.revision!==published?.revision){published=next;await renderTVView();}}}catch(e){/* Keep last successfully loaded published menu visible. */}},window.SEIYUN_CONFIG.refreshMs||30000);
         return;}
       authEvents();const u=await cloud.getUser();if(!u){loginScreen();return;}
       ownerId=u.id;draft=await cloud.getDraft();published=await cloud.getPublished(ownerId);history=await cloud.getHistory();if(!draft){draft=starter();await cloud.saveDraft(draft);}if(!Array.isArray(draft.products)||!Array.isArray(draft.screens))throw Error('Online menu data is invalid.');selected=null;
