@@ -3,7 +3,8 @@
 window.SEIYUN_CONFIG = Object.freeze({
  url:'https://tfknuqbaahesuqugfaib.supabase.co',
  publishableKey:'sb_publishable_PrtADc45VADOpGq9tGskZQ_UomVME_s',
- bucket:'menu-products',refreshMs:30000
+ bucket:'menu-products',refreshMs:30000,
+ confirmationRedirectUrl:'https://cafe-menu-generator.raj-techai2026.workers.dev/'
 });
 window.seiyunCloud=(()=>{
  if(!window.supabase?.createClient)return null;
@@ -17,7 +18,7 @@ window.seiyunCloud=(()=>{
   client,get ownerId(){return user?.id||null},
   getUser,
   async signIn(email,password){const r=await client.auth.signInWithPassword({email,password});fail(r);user=r.data.user;return user},
-  async signUp(email,password){const r=await client.auth.signUp({email,password});fail(r);user=r.data?.session?.user||null;return {needsConfirmation:!r.data?.session}},
+  async signUp(email,password){const r=await client.auth.signUp({email,password,options:{emailRedirectTo:config.confirmationRedirectUrl}});fail(r);user=r.data?.session?.user||null;return {needsConfirmation:!r.data?.session}},
   async signOut(){const r=await client.auth.signOut();fail(r);user=null},
   async getDraft(){const u=await requireUser();const r=await client.from('studio_private').select('draft').eq('owner_id',u.id).maybeSingle();fail(r);return r.data?.draft||null},
   async saveDraft(draft){const u=await requireUser();const r=await client.from('studio_private').upsert({owner_id:u.id,draft,updated_at:new Date().toISOString()},{onConflict:'owner_id'});fail(r)},
