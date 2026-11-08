@@ -49,3 +49,17 @@ If registration is disabled in Supabase Auth, first invite/create the owner in y
 
 ## Project continuity
 Read \`agent.md\` at repository root before changing the UI or backend. The older \`screen1/\` subdirectory is superseded by \`studio/\`.
+
+## Existing live Cloudflare Workers deployment — email confirmation redirect
+
+The owner deployed the app at **https://cafe-menu-generator.raj-techai2026.workers.dev/**. Previous examples using a `.pages.dev` domain are outdated for this deployment.
+
+**Required Supabase Auth setting (configure manually in dashboard):**
+- Project: `tfknuqbaahesuqugfaib` → Authentication → URL Configuration.
+- **Site URL:** `https://cafe-menu-generator.raj-techai2026.workers.dev/`
+- **Redirect URLs:** add `https://cafe-menu-generator.raj-techai2026.workers.dev/` (exact URL).
+- Save. Keep **Confirm email** enabled for security. Supabase uses the Site URL as fallback when a confirmation redirect is missing or disallowed.
+
+The code in `studio/cloud.js` now passes `options.emailRedirectTo` with the hosted URL for future signups. A GitHub push doesn't guarantee the Worker has redeployed: check Cloudflare Deployments for the commit and redeploy manually if your Worker isn't linked to GitHub.
+
+**2026-11-07 Supabase check:** one Auth user existed and its `email_confirmed_at` field was populated. No unconfirmed users remained. No account required manual bypass or auto-confirmation. An email-confirmation link opening localhost **after** successful verification is a redirect configuration issue, not necessarily an account-confirmation failure. Existing user should sign in on the production URL.
