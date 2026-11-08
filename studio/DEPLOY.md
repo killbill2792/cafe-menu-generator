@@ -24,6 +24,8 @@ Do not disclose service-role keys or database passwords. The frontend contains O
 
 If registration is disabled in Supabase Auth, first invite/create the owner in your project's Authentication → Users panel. Do not use the Supabase database password as the owner password.
 
+**After creating the owner account, disable public signups** in Supabase Auth settings or use invite-only registration to avoid unrelated users consuming the free project's storage. Existing owner login remains available.
+
 ## Step 4 — Set up the first menu
 - The editor starts with a best-effort transcription of the existing 23-item Seiyun menu photograph. **Verify every name, ingredient, size and price before publishing.** No photos are automatically assigned to the wrong drink.
 - Click a drink **directly on Screen 1** to change it; **Upload photo** shows the whole cup (PNG/JPG/WebP/AVIF accepted).
