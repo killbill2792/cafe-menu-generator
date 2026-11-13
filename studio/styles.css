@@ -354,7 +354,7 @@ html, body, button, input, textarea, select,
 .signin-create{border:0;background:none;text-decoration:underline;color:#713c2e;font-weight:700}
 .cloud-live-screen .tv-top-indicator,.cloud-live-screen .tv-back{display:none!important}
 /* Always show the complete cup: never scale or crop the product photo. */
-.tv-photo-first .pf-photo img,.preview-screen .tv-photo-first .pf-photo img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center center!important;transform:none!important;padding:.2cqw!important}
+.tv-photo-first .pf-photo img,.preview-screen .tv-photo-first .pf-photo img{position:absolute!important;inset:0!important;display:block!important;box-sizing:border-box!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center center!important;transform:none!important;padding:.2cqw!important}
 .tv-showcase .tv-stage-img,.preview-screen .tv-showcase .tv-stage-img,.tv-details .tv-stage-img{width:94%!important;height:96%!important;max-width:94%!important;max-height:96%!important;object-fit:contain!important;transform:none!important;animation:floatcup 8.5s ease-in-out infinite alternate!important}
 @media(prefers-reduced-motion:reduce){.tv-showcase .tv-stage-img,.tv-details .tv-stage-img{animation:none!important}}
 
