@@ -20,22 +20,27 @@ No new service, paid dependency, backend migration, arbitrary image positioning,
 ### Task 1 — Persistent previews and selection
 **Files:** `studio/app.js`, `studio/styles.css`.
 - [ ] Add a failing test for two portrait preview containers on the Edit menu page.
-- [ ] Implement both previews and selection to the existing contextual product editor.
-- [ ] Keep refresh logic updating both previews and add responsive layout.
+- [x] Implement both previews and selection to the existing contextual product editor.
+- [x] Keep refresh logic updating both previews and add responsive layout.
 - [ ] Run browser test for selection and no unexpected disappearance.
 - [ ] Commit.
 
 ### Task 2 — Independent ad photo selection
 **Files:** `studio/app.js`, `studio/cloud-bridge.js`.
 - [ ] Add a failing test: two uploaded photos, Screen 1 uses primary, Screen 2 uses optional showcasePrimary; fallback without it.
-- [ ] Use `showcasePrimary` only in Screen 2 rendering.
-- [ ] Give each screen its own upload button; add Screen 2 image selector in shared inspector; persist through existing draft storage.
+- [x] Use `showcasePrimary` only in Screen 2 rendering.
+- [x] Give each screen its own upload button; add Screen 2 image selector in shared inspector; persist through existing draft storage.
 - [ ] Browser test both assignments and draft persistence mock; verify no changes to price/content.
 - [ ] Commit.
 
 ### Task 3 — End-to-end regression and handoff
 **Files:** `studio/README.md`, `agent.md`.
 - [ ] Test menu 23-item fit, Screen 2 photo-first view, empty state, two-screen edit workflow, responsive.
-- [ ] Verify new commits in `main` and check for a Cloudflare deployment; never assume push == live.
+- [x] Verify new commits in `main` and check for a Cloudflare deployment; never assume push == live.
 - [ ] Update README and handoff with approved UX, rollout, and unresolved device/browser verification.
 - [ ] Commit.
+
+## Current verification boundary
+- Completed: JS syntax check, mocked DOM construction and controls, Screen 1/2 image independence/fallback tests, and code re-read from GitHub.
+- Pending: real authenticated browser upload/select flow and responsive screenshot, Cloudflare Worker deployment check (public URL check was inaccessible), Samsung TVs.
+- All [ ] items above remain pending unless demonstrably verified; do not mark complete based only on mocked tests.
