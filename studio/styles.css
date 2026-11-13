@@ -367,3 +367,51 @@ html, body, button, input, textarea, select,
 @media(prefers-reduced-motion:reduce){
  .tv-showcase .tv-stage-img,.tv-details .tv-stage-img{animation:none!important}
 }
+
+
+/* Persistent two-screen owner editor; customer-facing TV layouts unchanged. */
+.workspace:has(.dual-screen-preview-grid) .menu-workbench{
+  grid-template-columns:minmax(0,1fr) minmax(280px,.62fr);
+  gap:18px;align-items:start
+}
+.workspace:has(.dual-screen-preview-grid) .content{max-width:1900px}
+.dual-screen-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;align-items:start;width:100%}
+.dual-screen-panel{min-width:0;border:1px solid #e2d4c6;background:#faf6f0;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.dual-screen-panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.dual-screen-panel-head strong{font:800 12px var(--type-ui);letter-spacing:.07em;color:#553127}
+.dual-screen-panel-head small{display:block;font:500 10px var(--type-ui);color:#8a7467;margin-top:3px}
+.dual-screen-panel-head .button{font-size:11px;min-height:29px;padding:6px 9px}
+.dual-screen-panel-head .button.active,.dual-screen-panel-head .button[aria-pressed="true"]{background:#6a342c;color:#fff5e7;border-color:#6a342c}
+.dual-screen-slot{width:min(100%,36vh,310px);margin:0 auto;min-width:0}
+.dual-screen-slot .menu-stage-wrap{max-width:none;width:100%;margin:0;border:5px solid #2c201b;border-radius:12px;box-shadow:0 12px 25px #29170d19}
+.dual-showcase-slot{border:5px solid #2c201b;border-radius:12px;overflow:hidden;background:#2c201b;box-shadow:0 12px 25px #29170d19}
+.dual-showcase-slot .preview-screen{width:100%;aspect-ratio:9/16;border:0;border-radius:4px}
+.dual-showcase-picker-label{display:block;font:650 11px/1.4 var(--type-ui);color:#624c40}
+.dual-showcase-picker-label select,.dual-photo-editor select{display:block;width:100%;max-width:100%;margin-top:4px;padding:8px 9px;border:1px solid #cbb9aa;border-radius:8px;background:#fffefa;color:#3c2720;font:600 12px var(--type-ui)}
+.dual-screen-help{font-size:11px;line-height:1.4;color:#806d60;margin:0}
+.dual-upload{width:100%;font-size:11px}
+.dual-photo-editor{padding:14px 0;margin:2px 0 13px;border-top:1px solid #e9ddd1;border-bottom:1px solid #e9ddd1;display:grid;gap:9px}
+.dual-photo-editor strong{font-size:13px;color:#4d2d27}
+.dual-photo-editor p{font-size:11px;color:#7a675c;margin:4px 0 2px;line-height:1.45}
+.dual-photo-editor label{font-weight:700;color:#6c5144;font-size:11px}
+.dual-photo-editor button{justify-self:start}
+#visualShowcaseCanvas{cursor:pointer}
+@media(max-width:1150px){
+ .workspace:has(.dual-screen-preview-grid) .menu-workbench{grid-template-columns:minmax(0,1fr) minmax(260px,.7fr);gap:12px}
+ .dual-screen-panel{padding:9px;gap:8px}
+}
+@media(max-width:980px){
+ .workspace:has(.dual-screen-preview-grid) .menu-workbench{grid-template-columns:1fr}
+ .workspace:has(.dual-screen-preview-grid) .inline-edit-panel{position:relative;max-height:none;top:auto}
+ .dual-screen-slot{width:min(100%,34vh,310px)}
+}
+@media(max-width:600px){
+ .dual-screen-preview-grid{gap:7px}
+ .dual-screen-panel{padding:6px;gap:6px}
+ .dual-screen-panel-head{display:block}
+ .dual-screen-panel-head .button{margin-top:6px}
+ .dual-screen-slot{width:100%}
+ .dual-showcase-picker-label{font-size:10px}
+ .dual-showcase-picker-label select{font-size:10px;padding:6px}
+ .dual-screen-help{font-size:10px}
+}
