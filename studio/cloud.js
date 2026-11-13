@@ -31,7 +31,8 @@ window.seiyunCloud=(()=>{
    if(!file||!['image/png','image/jpeg','image/webp','image/avif'].includes(file.type))throw Error('Use a PNG, JPG, WebP or AVIF image.');
    if(file.size>6291456)throw Error('Photo exceeds 6 MB. Choose a smaller image.');
    const ext=({'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/avif':'avif'})[file.type];
-   const path=`${u.id}/${crypto.randomUUID()}.${ext}`;
+   const identifier=globalThis.crypto?.randomUUID?.() || Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
+   const path=`${u.id}/${identifier}.${ext}`;
    const r=await client.storage.from(config.bucket).upload(path,file,{upsert:false,contentType:file.type,cacheControl:'86400'});fail(r);
    return client.storage.from(config.bucket).getPublicUrl(path).data.publicUrl;
   }
