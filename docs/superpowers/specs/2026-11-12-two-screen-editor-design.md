@@ -1,5 +1,5 @@
 # Two-screen always-visible owner editor — design
-Status: Accepted for implementation (direct user request, 2026-11-12).
+Status: Implemented on GitHub main; Cloudflare deployment and physical TV validation pending (2026-11-12).
 Scope: owner Studio only; existing TV menu/showcase layouts remain unchanged.
 
 ## Problem
