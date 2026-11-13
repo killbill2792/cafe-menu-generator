@@ -93,6 +93,7 @@
           if(!url)throw Error('Storage did not return an image URL.');
           product.photos.push(url);
           if(product.photos.length===1)product.primary=0;
+          if(window.seiyunUploadDestination==='showcase')product.showcasePrimary=product.photos.length-1;
           added++;
         }catch(e){failed.push(`${file.name||'Image'}: ${e.message||'upload failed'}`);}
       }
