@@ -24,9 +24,90 @@
   rollback=async function(){if(!history.length)return;const previous=history[history.length-1];if(!confirm(`Restore published revision ${previous.revision} to every TV?`))return;
     try{await cloud.rollback(previous.revision);published=await cloud.getPublished(ownerId);history=await cloud.getHistory();render();toasts('Published an earlier version as the latest revision.');}catch(e){toasts('Rollback failed: '+e.message,true);}
   };
-  addPhotos=async function(files){const product=draft.products.find(x=>x.id===selected);if(!product)return;let added=0;try{for(const file of files){const url=await fileAsImage(file);const blob=await(await fetch(url)).blob();const path=await cloud.upload(new File([blob],'product.webp',{type:'image/webp'}));product.photos.push(path);added++;}
-      if(product.photos.length===added)product.primary=0;saveSoon();renderProductForm();renderEditMiniPreview();toasts(`${added} full-sized drink photo(s) stored online.`);
-    }catch(e){toasts('Upload did not finish: '+e.message,true);}
+  // Upload supported product photos directly; convert only oversized or unsupported
+  // formats. Never crop a drink photo or silently drop transparency.
+  const allowedPhotoTypes=new Set(['image/png','image/jpeg','image/webp','image/avif']);
+  const extensionTypes={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',jpe:'image/jpeg',jfif:'image/jpeg',webp:'image/webp',avif:'image/avif',gif:'image/gif',bmp:'image/bmp',heic:'image/heic',heif:'image/heif',tif:'image/tiff',tiff:'image/tiff'};
+  const maxPhotoBytes=6*1024*1024;
+  async function prepareProductPhoto(file){
+    if(!file || !file.size)throw Error('Choose a nonempty photograph.');
+    const extension=(file.name||'').split('.').pop().toLowerCase();
+    const mime=(file.type||extensionTypes[extension]||'').toLowerCase();
+    if(mime==='image/svg+xml' || extension==='svg')throw Error('SVG is not supported for drink photographs. Use PNG or JPG.');
+    if(!mime.startsWith('image/'))throw Error('This is not a photograph. Choose PNG, JPG, WebP, AVIF, GIF, BMP or a supported HEIC photo.');
+    if(file.size>50*1024*1024)throw Error('Photo is over 50 MB. Please choose a smaller original.');
+    if(allowedPhotoTypes.has(mime)&&file.size<=maxPhotoBytes){
+      return new File([file],file.name||'drink-photo',{type:mime,lastModified:file.lastModified||Date.now()});
+    }
+    let image,objectUrl;
+    try{
+      objectUrl=URL.createObjectURL(file);
+      image=await new Promise((resolve,reject)=>{
+        const el=new Image();
+        el.onload=()=>resolve(el);
+        el.onerror=()=>reject(new Error('This browser cannot decode the selected photo. If it is HEIC/HEIF, export it as JPEG or PNG and try again.'));
+        el.src=objectUrl;
+      });
+      const naturalWidth=image.naturalWidth, naturalHeight=image.naturalHeight;
+      if(!naturalWidth||!naturalHeight)throw Error('Photo has invalid dimensions.');
+      const maxSide=2400;
+      const scale=Math.min(1,maxSide/Math.max(naturalWidth,naturalHeight));
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.max(1,Math.round(naturalWidth*scale));
+      canvas.height=Math.max(1,Math.round(naturalHeight*scale));
+      const ctx=canvas.getContext('2d');
+      if(!ctx)throw Error('This browser cannot process photos. Please use Chrome or Safari.');
+      ctx.drawImage(image,0,0,canvas.width,canvas.height);
+      async function encode(type,quality){return new Promise(resolve=>canvas.toBlob(resolve,type,quality));}
+      let blob=null;
+      for(const quality of [.88,.76,.64,.50]){
+        const current=await encode('image/webp',quality);
+        if(current?.type==='image/webp'&&current.size<=maxPhotoBytes){blob=current;break;}
+      }
+      if(!blob){
+        ctx.globalCompositeOperation='destination-over';ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
+        for(const quality of [.85,.68,.50,.35]){
+          const current=await encode('image/jpeg',quality);
+          if(current?.type==='image/jpeg'&&current.size<=maxPhotoBytes){blob=current;break;}
+        }
+      }
+      if(!blob)throw Error('Could not reduce the photo below the 6 MB upload limit. Choose a smaller image.');
+      const suffix=blob.type==='image/webp'?'webp':'jpg';
+      return new File([blob],`drink-photo.${suffix}`,{type:blob.type,lastModified:Date.now()});
+    }finally{if(objectUrl)URL.revokeObjectURL(objectUrl);}
+  }
+  let isUploadingPhoto=false;
+  addPhotos=async function(files){
+    if(isUploadingPhoto||!files?.length)return;
+    const product=draft.products.find(x=>x.id===selected);
+    if(!product){toasts('Select a drink card first.',true);return;}
+    isUploadingPhoto=true;
+    let added=0,failed=[];
+    const button=document.querySelector('#editPanel [data-action="add-photos"]');
+    if(button){button.disabled=true;button.textContent='Uploading…';}
+    try{
+      for(const file of files){
+        try{
+          const prepared=await prepareProductPhoto(file);
+          const url=await cloud.upload(prepared);
+          if(!url)throw Error('Storage did not return an image URL.');
+          product.photos.push(url);
+          if(product.photos.length===1)product.primary=0;
+          added++;
+        }catch(e){failed.push(`${file.name||'Image'}: ${e.message||'upload failed'}`);}
+      }
+      if(added){
+        await flush();
+        if(selected===product.id){renderProductForm();renderEditMiniPreview();}
+        toasts(`${added} photo${added===1?'':'s'} uploaded and saved online.`);
+      }
+      if(failed.length)toasts('Photo upload failed: '+failed.slice(0,2).join(' | '),true);
+    }catch(e){toasts('Uploaded photo, but online draft save failed: '+(e.message||'Please retry Save'),true);}
+    finally{
+      isUploadingPhoto=false;
+      const current=document.querySelector('#editPanel [data-action="add-photos"]');
+      if(current){current.disabled=false;current.innerHTML='Upload photo';}
+    }
   };
   const oldRestore=restore;
   restore=async function(file){if(!file)return;try{const data=JSON.parse(await file.text());if(data.format!=='seiyun-studio-v1'||!Array.isArray(data.draft?.products)||!Array.isArray(data.draft?.screens))throw Error('Not a valid backup');if(!confirm('Restore this backup as a PRIVATE DRAFT? The live menu will not change until you Publish.'))return;draft=data.draft;await flush();selected=null;tab='products';render();toasts('Draft restored online. Review before publishing.');}catch(e){toasts('Restore failed: '+e.message,true);}};
