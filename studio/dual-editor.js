@@ -57,7 +57,6 @@
     if(!p)return;
     selected=p.id;
     activeScreen=focus||activeScreen;
-    nativeRenderProductForm();
     renderProductForm();
     updateSelection();
     refreshShowcase();
