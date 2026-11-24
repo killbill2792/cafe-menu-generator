@@ -29,3 +29,13 @@ A single product stores all photos in `photos[]`. Screen 1 uses `primary`, Scree
 The responsive owner workspace displays both portrait previews beside the inspector on larger screens; narrow viewports stack them. No separate product catalog, paid service, new API, or DB migration was added. Full-screen TV presentation is unchanged.
 
 **Verification:** GitHub code review and JavaScript syntax checks passed; simulated tests verified the two previews, both edit buttons, Screen 2 upload action, separated photo choice, and fallback. A real authenticated browser test, Cloudflare deployment, and Samsung TV validation are still pending; do not claim those are complete.
+
+## Menu Generator: download-first 24-design library
+
+**Edit menu** retains product names, ingredients, prices and the owner's real photos. The **Menu generator** tab shows 24 ready-to-use choices (eight distinct layout families in three styles), automatically filled with that same catalog. Owners choose a design and output size (US Letter, A4, digital portrait, landscape or square). The **Photo space** control gives larger real drink photos more area and adds pages when needed. For just one drink, use **Adjust one drink** and **Selected drink space**; full photos are contained, not cropped.
+
+The menu generator makes downloadable artifacts. **Publishing to a TV or our website is NOT required.** Choose **Print / Save PDF** to open the native print dialog (choose *Save as PDF*), or **Download PNG/JPG**. Multi-page raster downloads arrive in a ZIP. A failure to load a product image for raster export is surfaced explicitly rather than shipping an inaccurate file.
+
+The 24 choices are eight different compositions × three visual treatments, not 24 separate upstream GitHub downloads. See [MENU_GALLERY_SOURCES.md](MENU_GALLERY_SOURCES.md) for exact open-source sources, asset rules and third-party image-export dependencies. Only owner-uploaded photographs are used. Existing animated Screen 2, existing Supabase owner authentication, private drafts and TV publish flow are preserved.
+
+**Verification boundary:** Node/renderer tests, local Chromium desktop/mobile UI, sample three-page Chromium PDF, and PNG ZIP packaging with a mocked capture engine passed. Real CDN capture, actual Supabase CORS, Cloudflare auto-deployment and signed-in production exports need verification after deployment; do not claim those have passed.
