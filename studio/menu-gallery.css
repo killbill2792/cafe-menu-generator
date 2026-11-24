@@ -93,3 +93,12 @@
 /* Downloading requires no screen publishing step. */
 .workspace:has(.mg-library) .tiles{display:none}
 .workspace:has(.mg-library) .topline [data-action="publish"]{display:none}
+
+
+/* Keep names and prices legible if owner chooses a very large cup photograph. */
+.mg-layout-photo-left .mg-item.mg-item-largephoto,
+.mg-layout-photo-right .mg-item.mg-item-largephoto{flex-direction:column}
+.mg-layout-photo-left .mg-item.mg-item-largephoto .mg-item-photo,
+.mg-layout-photo-right .mg-item.mg-item-largephoto .mg-item-photo{flex:0 0 54%;width:100%;height:54%}
+.mg-layout-photo-left .mg-item.mg-item-largephoto .mg-item-info,
+.mg-layout-photo-right .mg-item.mg-item-largephoto .mg-item-info{justify-content:flex-start}
