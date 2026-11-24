@@ -33,7 +33,7 @@ square:{label:'Square · 1080×1080',w:1080,h:1080,print:'1080px 1080px'}
 const DEFAULT=Object.freeze({templateId:'photo-left-warm',format:'letter',imageSpace:43,photoSizeByProduct:{}});
 function clamp(n,lo,hi){n=Number(n);return Number.isFinite(n)?Math.min(hi,Math.max(lo,n)):lo;}
 function esc(v){return String(v===null||v===undefined?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function safePhoto(url){if(!url||!String(url).trim())return '';try{const u=new URL(String(url),root.location?.origin||'https://example.com');if(u.protocol==='https:'||u.protocol==='http:'||u.protocol==='blob:'||u.protocol==='data:'&&u.href.startsWith('data:image/'))return u.href;}catch(e){}return '';}
+function safePhoto(url){if(!url||!String(url).trim())return '';try{const u=new URL(String(url));if(u.protocol==='https:'||u.protocol==='http:'||u.protocol==='blob:'||u.protocol==='data:'&&u.href.startsWith('data:image/'))return u.href;}catch(e){}return '';}
 function getSettings(state){const x=state?.menuArtwork||{};return {
 templateId:REGISTRY.find(t=>t.id===x.templateId)?.id||DEFAULT.templateId,
 format:FORMATS[x.format]?x.format:DEFAULT.format,
@@ -47,11 +47,11 @@ photo:safePhoto((Array.isArray(p.photos)?p.photos:[])[Number(p.primary)||0]||(Ar
 }));}
 function currency(v,state){const n=Number(v);const symbol={USD:'$',CAD:'CA$',EUR:'€',GBP:'£',AED:'AED ',SAR:'SAR ',INR:'₹',JPY:'¥'}[state?.currency]||'$';return Number.isFinite(n)?symbol+n.toFixed(state?.currency==='JPY'?0:2):'Price TBD';}
 function prices(p,state){if(!p.sizes.length)return '<span class="mg-no-price">Price to add</span>';return p.sizes.map(s=>'<span>'+esc(s.name)+' <b>'+esc(currency(s.price,state))+'</b></span>').join('');}
-function capacityFor(state,config){const t=REGISTRY.find(t=>t.id===config.templateId)||REGISTRY[0];const f=FAMILY.find(f=>f.id===t.layout);const fmt=FORMATS[config.format]||FORMATS.letter;const aspect=fmt.h/fmt.w;let factor=aspect<.8?.73:aspect<1.15?.87:aspect>1.6?1.35:1;const photoFactor=1+(43-clamp(config.imageSpace,25,70))/180;return Math.min(25,Math.max(2,Math.floor(f.capacity*factor*photoFactor)));}
+function capacityFor(state,config){const t=REGISTRY.find(t=>t.id===config.templateId)||REGISTRY[0];const f=FAMILY.find(f=>f.id===t.layout);const fmt=FORMATS[config.format]||FORMATS.letter;const aspect=fmt.h/fmt.w;let factor=aspect<.8?.73:aspect<1.15?.87:aspect>1.6?1.35:1;const maxSpace=Math.max(clamp(config.imageSpace,25,70),...Object.values(config.photoSizeByProduct||{}).map(x=>clamp(x,25,70)));const photoFactor=1+(43-maxSpace)/60;return Math.min(25,Math.max(2,Math.floor(f.capacity*factor*photoFactor)));}
 function paginate(items,perPage){const pages=[];for(let i=0;i<items.length;i+=perPage)pages.push(items.slice(i,i+perPage));return pages.length?pages:[[]];}
 function thumb(p,space){const n=clamp(space,25,70);return '<div class="mg-item-photo" style="--mg-photo-space:'+n+'%">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" crossorigin="anonymous">':'<span class="mg-photo-empty">PHOTO TO ADD</span>')+'</div>';}
 function itemHTML(p,state,opts){const custom=opts.photoSizeByProduct[p.id],space=custom===undefined?opts.imageSpace:clamp(custom,25,70);
-return '<article class="mg-item" data-menu-product="'+esc(p.id)+'" style="--mg-photo-space:'+space+'%">'+thumb(p,space)+'<div class="mg-item-info"><div class="mg-item-name">'+esc(p.name)+'</div><div class="mg-item-ingredients">'+esc(p.ingredients)+'</div><div class="mg-item-prices">'+prices(p,state)+'</div></div></article>';}
+return '<article class="mg-item '+(space>55?'mg-item-largephoto':'')+'" data-menu-product="'+esc(p.id)+'" style="--mg-photo-space:'+space+'%">'+thumb(p,space)+'<div class="mg-item-info"><div class="mg-item-name">'+esc(p.name)+'</div><div class="mg-item-ingredients">'+esc(p.ingredients)+'</div><div class="mg-item-prices">'+prices(p,state)+'</div></div></article>';}
 function pageHTML(state,opts,items,index,count){
 const t=REGISTRY.find(t=>t.id===opts.templateId)||REGISTRY[0],family=FAMILY.find(f=>f.id===t.layout),look=LOOK.find(l=>l.id===t.tone)||LOOK[0],size=FORMATS[opts.format];
 const hero=items.length&&['editorial','split'].includes(family.id)?items[0]:null;
