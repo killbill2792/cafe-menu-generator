@@ -3,3 +3,5 @@
 - [0002 — Secure online publishing](0002-secure-online-publishing.md): Supabase Auth/Storage/RLS, public displays, threat model, rollout.
 
 - [0003 — Samsung TVs, PDF and QR codes](0003-samsung-tv-print-qr.md): read-only mobile menu, client-side QR, print/PDF and rollout.
+
+- [0001 Export-first menu design library](0001-menu-artifact-library.md) — Accepted; in implementation on feature branch.
