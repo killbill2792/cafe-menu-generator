@@ -101,9 +101,28 @@ function printMenu(){const opts=ensureDraftConfig(),result=renderPages(getDraft(
 const head='<meta charset="utf-8"><title>Seiyun Menu</title><link rel="stylesheet" href="'+esc(new URL('menu-gallery.css',document.baseURI).href)+'"><style>@page{size:'+format.print+';margin:0}html,body{margin:0;padding:0;background:white}.mg-print-stage{display:block}.mg-export-page{break-after:page;page-break-after:always;box-shadow:none!important;border-radius:0!important}.mg-export-page:last-child{break-after:auto}</style>';
 const popup=root.open('','_blank');if(!popup)throw Error('Please allow pop-ups to print your menu.');
 popup.document.write('<!doctype html><html><head>'+head+'</head><body><main class="mg-print-stage">'+result.pages.join('')+'</main></body></html>');popup.document.close();
-let hasPrinted=false;const beginPrint=()=>{if(!hasPrinted&&!popup.closed){hasPrinted=true;popup.focus();popup.print();}};
-popup.addEventListener('load',()=>setTimeout(beginPrint,600),{once:true});
-setTimeout(()=>{if(popup.document.readyState==='complete')beginPrint()},1400);
+let hasPrinted=false;
+const beginPrint=async()=>{
+ if(hasPrinted||popup.closed)return;
+ hasPrinted=true;
+ const images=[...popup.document.images];
+ const wait=images.map(img=>img.complete?Promise.resolve():new Promise(resolve=>{
+   img.addEventListener('load',resolve,{once:true});
+   img.addEventListener('error',resolve,{once:true});
+ }));
+ await Promise.race([Promise.all(wait),new Promise(resolve=>setTimeout(resolve,10000))]);
+ if(popup.closed)return;
+ if(images.some(img=>!img.naturalWidth)){
+   const notice=popup.document.createElement('p');
+   notice.textContent='Some product photos did not load. Check your connection and reload the menu before printing.';
+   notice.style.cssText='color:#8a342a;padding:20px;background:#fff0eb;font:16px Arial';
+   popup.document.body.prepend(notice);
+   return;
+ }
+ popup.focus();popup.print();
+};
+popup.addEventListener('load',beginPrint,{once:true});
+setTimeout(beginPrint,3500);
 }
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),15000);}
 async function exportImages(kind){const opts=ensureDraftConfig(),result=renderPages(getDraft(),opts);
