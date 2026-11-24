@@ -1,7 +1,7 @@
 name: Menu artwork tests
 on:
   push:
-    branches: ['feat/menu-artifact-library-24']
+    branches: ['main', 'feat/menu-artifact-library-24']
     paths: ['studio/menu-gallery.js', 'studio/menu-gallery.css', 'tests/menu-gallery.test.js', '.github/workflows/menu-gallery-tests.yml']
   pull_request:
     branches: [main]
