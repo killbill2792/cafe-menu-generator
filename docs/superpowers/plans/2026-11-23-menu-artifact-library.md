@@ -51,7 +51,7 @@ Files: `studio/menu-gallery.js`, `studio/index.html`, `studio/MENU_GALLERY_SOURC
 Files: `agent.md`, `studio/README.md`, specs.
 - [x] Run full available syntax, tests and browser checks at portrait/print/mobile.
 - [x] Review diff and correct critical issues; document evidence.
-- [ ] Merge feature branch to main only if green, and verify main head.
+- [x] Merge feature branch to main after GitHub Actions green; PR #3 squash merged as b48ee5faa5ffdcfb41de8f60b7133121f7574f8c and verified main files.
 - [ ] Verify deployed Cloudflare if accessible; record any blockers/real-auth limitations.
 
 ## Verification ledger (2026-11-23)
@@ -62,3 +62,10 @@ Files: `agent.md`, `studio/README.md`, specs.
 - [x] Real Chromium US Letter PDF render: 3 pages with 23 products, image visible after eager-load fix.
 - [x] Real JSZip packaged three generated PNG files using **mocked html2canvas capture**; output image conversion and remote CDN CORS remain unverified.
 - [ ] Verify live authenticated Supabase image export and Cloudflare deployment after merge.
+
+## Post-merge verification
+- [x] GitHub Actions pull-request job `Menu artwork tests` succeeded (run 45312636328 / job 138171862077) before squash merge.
+- [x] Confirmed merged main source contains 24 choices, 8 layouts, both gallery assets, export action, photo protections and unchanged Screen 2 editor.
+- [x] Re-evaluated exact `main` JavaScript and 360 output combinations using 31 products / 26 enabled; all 26 included once across pages.
+- [x] Added CI trigger for push to main (commit `6d7fcb7cd48d4bdda32b120482205405d3e39907`); post-push CI result not accessible through available GitHub tool, so not claimed green.
+- [ ] Live Cloudflare Workers build, actual authenticated owner workflow and CDN image rasterization could not be verified from this environment; Cloudflare DNS lookup failed.
