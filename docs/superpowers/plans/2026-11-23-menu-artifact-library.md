@@ -1,6 +1,6 @@
 # Menu Artifact Library Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (or subagent-driven-development) to implement this plan task-by-task. Steps use checkbox (`- [ ]`) for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (or subagent-driven-development) to implement this plan task-by-task. Steps use checkbox (`- [x]`) for tracking.
 
 **Goal:** Add a 24-choice, export-first menu generator with safe product-photo sizing, multipage previews and download paths to the existing Seiyun owner Studio.
 
@@ -29,27 +29,36 @@
 ### Task 1: Registry and normalized renderer
 Files: create `studio/menu-gallery.js`; test `tests/menu-gallery.test.js`.
 Interfaces: `window.SeiyunMenuGallery.registry`, `renderPages(state,options)`.
-- [ ] Write failing registry count, unique ID, escaped data, paginate tests; run RED.
-- [ ] Build 8 compositions × 3 treatments and page renderer using existing menu data.
-- [ ] Run tests GREEN and commit.
+- [x] Write failing registry count, unique ID, escaped data, paginate tests; run RED.
+- [x] Build 8 compositions × 3 treatments and page renderer using existing menu data.
+- [x] Run tests GREEN and commit.
 
 ### Task 2: Owner gallery and photo prominence
 Files: modify `studio/app.js`, `studio/index.html`; create `studio/menu-gallery.css`.
 Interfaces: `renderMenuGallery()`, `saveSoon()`, existing `draft.menuArtwork` field.
-- [ ] Write failing UI-level tests for 24 selectable designs and photo-size bounds; run RED.
-- [ ] Integrate navigation, previews, preview page changes, and per-item overrides.
-- [ ] Run tests GREEN, check responsive CSS, commit.
+- [x] Write failing UI-level tests for 24 selectable designs and photo-size bounds; run RED.
+- [x] Integrate navigation, previews, preview page changes, and per-item overrides.
+- [x] Run tests GREEN, check responsive CSS, commit.
 
 ### Task 3: Exports and attribution
 Files: `studio/menu-gallery.js`, `studio/index.html`, `studio/MENU_GALLERY_SOURCES.md`, tests.
-- [ ] Write failing tests for multipage print structure, download action/error state.
-- [ ] Implement print browser save-as-PDF and PNG/JPG (ZIP for multipage).
-- [ ] Verify output page sizes, photo fidelity, exported count, library licenses and no stock photos.
-- [ ] Commit.
+- [x] Write failing tests for multipage print structure, download action/error state.
+- [x] Implement print browser save-as-PDF and PNG/JPG (ZIP for multipage).
+- [ ] Verify real CDN rasterization and authenticated Supabase photo export on deployed Cloudflare (pending production environment).
+- [x] Commit.
 
 ### Task 4: Merge and release verification
 Files: `agent.md`, `studio/README.md`, specs.
-- [ ] Run full available syntax, tests and browser checks at portrait/print/mobile.
-- [ ] Review diff and correct critical issues; document evidence.
+- [x] Run full available syntax, tests and browser checks at portrait/print/mobile.
+- [x] Review diff and correct critical issues; document evidence.
 - [ ] Merge feature branch to main only if green, and verify main head.
 - [ ] Verify deployed Cloudflare if accessible; record any blockers/real-auth limitations.
+
+## Verification ledger (2026-11-23)
+- [x] Node unit tests 7/7 pass; 24 templates, 8 families, 5 size profiles, data escaping, photo controls.
+- [x] 360 combinations (24 × 5 profiles × 3 photo-space levels) retain 23 menu products with no duplication.
+- [x] Real headless Chromium desktop/mobile owner gallery interaction checks, 390px no horizontal overflow.
+- [x] Photo fit with supplied Seiyun Coffee photo; other 22 missing photos labeled explicitly.
+- [x] Real Chromium US Letter PDF render: 3 pages with 23 products, image visible after eager-load fix.
+- [x] Real JSZip packaged three generated PNG files using **mocked html2canvas capture**; output image conversion and remote CDN CORS remain unverified.
+- [ ] Verify live authenticated Supabase image export and Cloudflare deployment after merge.
