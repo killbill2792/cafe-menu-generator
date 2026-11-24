@@ -98,7 +98,7 @@ const c=document.querySelector('#mgPageCount');if(c)c.textContent=r.pageCount+' 
 const prev=document.querySelector('#mgPrevPage'),next=document.querySelector('#mgNextPage');if(prev)prev.disabled=page<=0;if(next)next.disabled=page>=r.pageCount-1;
 }
 function printMenu(){const opts=ensureDraftConfig(),result=renderPages(getDraft(),opts),format=FORMATS[opts.format];
-const head='<meta charset="utf-8"><title>Seiyun Menu</title><link rel="stylesheet" href="'+esc(new URL('menu-gallery.css',location.href).href)+'"><style>@page{size:'+format.print+';margin:0}html,body{margin:0;padding:0;background:white}.mg-print-stage{display:block}.mg-export-page{break-after:page;page-break-after:always;box-shadow:none!important;border-radius:0!important}.mg-export-page:last-child{break-after:auto}</style>';
+const head='<meta charset="utf-8"><title>Seiyun Menu</title><link rel="stylesheet" href="'+esc(new URL('menu-gallery.css',document.baseURI).href)+'"><style>@page{size:'+format.print+';margin:0}html,body{margin:0;padding:0;background:white}.mg-print-stage{display:block}.mg-export-page{break-after:page;page-break-after:always;box-shadow:none!important;border-radius:0!important}.mg-export-page:last-child{break-after:auto}</style>';
 const popup=root.open('','_blank');if(!popup)throw Error('Please allow pop-ups to print your menu.');
 popup.document.write('<!doctype html><html><head>'+head+'</head><body><main class="mg-print-stage">'+result.pages.join('')+'</main></body></html>');popup.document.close();
 let hasPrinted=false;const beginPrint=()=>{if(!hasPrinted&&!popup.closed){hasPrinted=true;popup.focus();popup.print();}};
