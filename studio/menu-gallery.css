@@ -89,3 +89,7 @@
 
 .mg-layout-classic .mg-item.mg-item-largephoto,.mg-layout-compact .mg-item.mg-item-largephoto{flex-direction:column}
 .mg-layout-classic .mg-item.mg-item-largephoto .mg-item-photo,.mg-layout-compact .mg-item.mg-item-largephoto .mg-item-photo{flex:0 0 54%;width:100%;height:54%}
+
+/* Downloading requires no screen publishing step. */
+.workspace:has(.mg-library) .tiles{display:none}
+.workspace:has(.mg-library) .topline [data-action="publish"]{display:none}
