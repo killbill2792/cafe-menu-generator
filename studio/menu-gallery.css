@@ -68,13 +68,13 @@
 .mg-layout-editorial .mg-item{flex-direction:row}.mg-layout-editorial .mg-item-name{font-family:Georgia,serif;font-weight:700;font-size:19px}
 .mg-layout-classic .mg-page-body{grid-template-columns:repeat(2,minmax(0,1fr));gap:1% 2%}
 .mg-layout-classic .mg-item{padding:7px 10px;background:transparent;border:0;border-bottom:1px solid var(--mg-line);border-radius:0}
-.mg-layout-classic .mg-item-photo{flex-basis:19%;width:19%;background:transparent}.mg-layout-classic .mg-item-name{font:700 17px Georgia,serif}
+.mg-layout-classic .mg-item-photo{flex-basis:var(--mg-photo-space);width:var(--mg-photo-space);background:transparent}.mg-layout-classic .mg-item-name{font:700 17px Georgia,serif}
 .mg-layout-classic .mg-item-ingredients{font-size:11px}
 .mg-layout-split .mg-page-body{grid-template-columns:repeat(2,minmax(0,1fr))}
 .mg-layout-split .mg-item{flex-direction:row}.mg-layout-split .mg-item-name{font:750 18px Georgia,serif}
 .mg-layout-compact .mg-page-body{grid-template-columns:repeat(2,minmax(0,1fr));gap:1% 2%}
 .mg-layout-compact .mg-item{padding:4px 9px;border:0;background:transparent;border-bottom:1px solid var(--mg-line);border-radius:0}
-.mg-layout-compact .mg-item-photo{flex-basis:20%;width:20%;background:transparent}
+.mg-layout-compact .mg-item-photo{flex-basis:var(--mg-photo-space);width:var(--mg-photo-space);background:transparent}
 .mg-layout-compact .mg-item-name{font-size:17px}.mg-layout-compact .mg-item-ingredients{font-size:11px}
 .mg-layout-editorial .mg-hero h2,.mg-layout-split .mg-hero h2{max-height:2.4em;overflow:hidden}
 @media(max-width:800px){
@@ -86,3 +86,6 @@
 .mg-layout-gallery .mg-item.mg-item-largephoto,.mg-layout-editorial .mg-item.mg-item-largephoto,.mg-layout-split .mg-item.mg-item-largephoto{flex-direction:column}
 .mg-layout-gallery .mg-item.mg-item-largephoto .mg-item-photo,.mg-layout-editorial .mg-item.mg-item-largephoto .mg-item-photo,.mg-layout-split .mg-item.mg-item-largephoto .mg-item-photo{flex:0 0 58%;width:100%;height:58%}
 .mg-layout-gallery .mg-item.mg-item-largephoto .mg-item-info,.mg-layout-editorial .mg-item.mg-item-largephoto .mg-item-info,.mg-layout-split .mg-item.mg-item-largephoto .mg-item-info{justify-content:flex-start}
+
+.mg-layout-classic .mg-item.mg-item-largephoto,.mg-layout-compact .mg-item.mg-item-largephoto{flex-direction:column}
+.mg-layout-classic .mg-item.mg-item-largephoto .mg-item-photo,.mg-layout-compact .mg-item.mg-item-largephoto .mg-item-photo{flex:0 0 54%;width:100%;height:54%}
