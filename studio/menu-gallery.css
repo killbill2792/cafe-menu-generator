@@ -81,3 +81,8 @@
 .mg-builder{padding:13px}.mg-controls{grid-template-columns:1fr}.mg-gallery-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
 .mg-template-thumb{height:133px}.mg-preview-shell{padding:7px}.mg-actions{width:100%}.mg-actions .button{flex:1;min-width:130px}}
 @media print{body{margin:0!important;background:#fff!important}.mg-print-stage{display:block!important}.mg-export-page{margin:0!important;box-shadow:none!important;break-inside:avoid;page-break-inside:avoid;transform:none!important}.mg-export-page:not(:last-child){break-after:page;page-break-after:always}}
+
+/* When the owner enlarges a drink in a multi-column card, stack photo and text. */
+.mg-layout-gallery .mg-item.mg-item-largephoto,.mg-layout-editorial .mg-item.mg-item-largephoto,.mg-layout-split .mg-item.mg-item-largephoto{flex-direction:column}
+.mg-layout-gallery .mg-item.mg-item-largephoto .mg-item-photo,.mg-layout-editorial .mg-item.mg-item-largephoto .mg-item-photo,.mg-layout-split .mg-item.mg-item-largephoto .mg-item-photo{flex:0 0 58%;width:100%;height:58%}
+.mg-layout-gallery .mg-item.mg-item-largephoto .mg-item-info,.mg-layout-editorial .mg-item.mg-item-largephoto .mg-item-info,.mg-layout-split .mg-item.mg-item-largephoto .mg-item-info{justify-content:flex-start}
