@@ -112,6 +112,7 @@ const container=document.createElement('div');container.className='mg-export-hos
 try{const files=[];
 for(let i=0;i<result.pages.length;i++){container.innerHTML=result.pages[i];const el=container.firstElementChild;
 await Promise.all([...el.querySelectorAll('img')].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,4500);})));
+if([...el.querySelectorAll('img')].some(img=>!img.naturalWidth))throw Error('A product photo did not load for export. Retry or use Print / Save PDF.');
 const canvas=await root.html2canvas(el,{backgroundColor:null,scale:2,useCORS:true,allowTaint:false,logging:false});
 const type=kind==='jpg'?'image/jpeg':'image/png',ext=kind==='jpg'?'jpg':'png';
 const blob=await new Promise(resolve=>canvas.toBlob(resolve,type,kind==='jpg'?.94:undefined));
