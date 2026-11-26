@@ -38,7 +38,8 @@ function getSettings(state){const x=state?.menuArtwork||{};return {
 templateId:REGISTRY.find(t=>t.id===x.templateId)?.id||DEFAULT.templateId,
 format:FORMATS[x.format]?x.format:DEFAULT.format,
 imageSpace:clamp(x.imageSpace===undefined?DEFAULT.imageSpace:x.imageSpace,25,70),
-photoSizeByProduct:typeof x.photoSizeByProduct==='object'&&x.photoSizeByProduct!==null&&!Array.isArray(x.photoSizeByProduct)?x.photoSizeByProduct:{}
+photoSizeByProduct:typeof x.photoSizeByProduct==='object'&&x.photoSizeByProduct!==null&&!Array.isArray(x.photoSizeByProduct)?x.photoSizeByProduct:{},
+photoTransformByProduct:typeof x.photoTransformByProduct==='object'&&x.photoTransformByProduct!==null&&!Array.isArray(x.photoTransformByProduct)?x.photoTransformByProduct:{}
 };}
 function productsOf(state){return (Array.isArray(state?.products)?state.products:[]).filter(p=>p&&p.enabled!==false).map(p=>({
 id:String(p.id||''),name:String(p.name||'Untitled product'),category:String(p.category||'Menu'),ingredients:String(p.ingredients||''),
@@ -46,20 +47,22 @@ sizes:(Array.isArray(p.sizes)?p.sizes:[]).filter(s=>s&&s.name&&String(s.price??'
 photo:safePhoto((Array.isArray(p.photos)?p.photos:[])[Number(p.primary)||0]||(Array.isArray(p.photos)?p.photos[0]:''))
 }));}
 function currency(v,state){const n=Number(v);const symbol={USD:'$',CAD:'CA$',EUR:'€',GBP:'£',AED:'AED ',SAR:'SAR ',INR:'₹',JPY:'¥'}[state?.currency]||'$';return Number.isFinite(n)?symbol+n.toFixed(state?.currency==='JPY'?0:2):'Price TBD';}
-function prices(p,state){if(!p.sizes.length)return '<span class="mg-no-price">Price to add</span>';return p.sizes.map(s=>'<span>'+esc(s.name)+' <b>'+esc(currency(s.price,state))+'</b></span>').join('');}
+function prices(p,state){if(!p.sizes.length)return '<span class="mg-no-price">Price to add</span>';return p.sizes.map((s,i)=>'<span>'+esc(s.name)+' <b data-cs-edit="price" data-cs-price-index="'+i+'">'+esc(currency(s.price,state))+'</b></span>').join('');}
 function capacityFor(state,config){const t=REGISTRY.find(t=>t.id===config.templateId)||REGISTRY[0];const f=FAMILY.find(f=>f.id===t.layout);const fmt=FORMATS[config.format]||FORMATS.letter;const aspect=fmt.h/fmt.w;let factor=aspect<.8?.73:aspect<1.15?.87:aspect>1.6?1.35:1;const maxSpace=Math.max(clamp(config.imageSpace,25,70),...Object.values(config.photoSizeByProduct||{}).map(x=>clamp(x,25,70)));const photoFactor=1+(43-maxSpace)/60;return Math.min(25,Math.max(2,Math.floor(f.capacity*factor*photoFactor)));}
 function paginate(items,perPage){const pages=[];for(let i=0;i<items.length;i+=perPage)pages.push(items.slice(i,i+perPage));return pages.length?pages:[[]];}
-function thumb(p,space){const n=clamp(space,25,70);return '<div class="mg-item-photo" style="--mg-photo-space:'+n+'%">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="eager" crossorigin="anonymous">':'<span class="mg-photo-empty">PHOTO TO ADD</span>')+'</div>';}
+function thumb(p,space,opts={}){const n=clamp(space,25,70),tr=opts.photoTransformByProduct?.[p.id]||{},zoom=clamp(tr.zoom||100,100,240),x=clamp(tr.x||0,-60,60),y=clamp(tr.y||0,-60,60);
+return '<div class="mg-item-photo" data-cs-photo="'+esc(p.id)+'" style="--mg-photo-space:'+n+'%">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="eager" crossorigin="anonymous" style="transform:translate('+x+'%, '+y+'%) scale('+(zoom/100)+');transform-origin:center">':'<span class="mg-photo-empty">ADD PHOTO</span>')+'</div>';}
 function itemHTML(p,state,opts){const custom=opts.photoSizeByProduct[p.id],space=custom===undefined?opts.imageSpace:clamp(custom,25,70);
-return '<article class="mg-item '+(space>55?'mg-item-largephoto':'')+'" data-menu-product="'+esc(p.id)+'" style="--mg-photo-space:'+space+'%">'+thumb(p,space)+'<div class="mg-item-info"><div class="mg-item-name">'+esc(p.name)+'</div><div class="mg-item-ingredients">'+esc(p.ingredients)+'</div><div class="mg-item-prices">'+prices(p,state)+'</div></div></article>';}
+return '<article class="mg-item '+(space>55?'mg-item-largephoto':'')+'" data-menu-product="'+esc(p.id)+'" style="--mg-photo-space:'+space+'%">'+thumb(p,space,opts)+'<div class="mg-item-info"><div class="mg-item-name" data-cs-edit="name">'+esc(p.name)+'</div><div class="mg-item-ingredients" data-cs-edit="ingredients">'+esc(p.ingredients)+'</div><div class="mg-item-prices">'+prices(p,state)+'</div></div></article>';}
 function pageHTML(state,opts,items,index,count){
 const t=REGISTRY.find(t=>t.id===opts.templateId)||REGISTRY[0],family=FAMILY.find(f=>f.id===t.layout),look=LOOK.find(l=>l.id===t.tone)||LOOK[0],size=FORMATS[opts.format];
 const hero=items.length&&['editorial','split'].includes(family.id)?items[0]:null;
 const cols=family.id==='photo-cards'?3:['gallery','editorial','classic','split','compact'].includes(family.id)?2:1;
-const vars='--mg-rows:'+Math.max(1,Math.ceil(items.length/cols))+';--mg-bg:'+look.bg+';--mg-card:'+look.card+';--mg-ink:'+look.text+';--mg-sub:'+look.sub+';--mg-accent:'+look.accent+';--mg-line:'+look.border+';--mg-width:'+size.w+'px;--mg-height:'+size.h+'px;';
+const branding=state?.branding||{},color=v=>/^#[0-9a-f]{6}$/i.test(String(v||''))?v:null;
+const vars='--mg-rows:'+Math.max(1,Math.ceil(items.length/cols))+';--mg-bg:'+(color(branding.background)||look.bg)+';--mg-card:'+look.card+';--mg-ink:'+(color(branding.text)||look.text)+';--mg-sub:'+look.sub+';--mg-accent:'+(color(branding.accent)||look.accent)+';--mg-line:'+look.border+';--mg-width:'+size.w+'px;--mg-height:'+size.h+'px;';
 return '<section class="mg-export-page mg-layout-'+family.id+' mg-tone-'+look.id+'" style="'+vars+'" data-page="'+(index+1)+'" data-count="'+items.length+'">'+
-'<header class="mg-page-header"><div class="mg-brand">seiyun <small>YEMENI COFFEE</small></div><span>OUR MENU</span></header>'+
-(hero?'<div class="mg-hero"><div class="mg-hero-copy"><small>FROM OUR COLLECTION</small><h2>'+esc(hero.name)+'</h2><p>'+esc(hero.ingredients)+'</p><div class="mg-hero-prices">'+prices(hero,state)+'</div></div>'+thumb(hero,opts.imageSpace)+'</div>':'')+
+'<header class="mg-page-header"><div class="mg-brand">'+(branding.showLogo&&safePhoto(branding.logoUrl)?'<img class="mg-brand-logo" src="'+esc(safePhoto(branding.logoUrl))+'" alt="'+esc(branding.name||'Café logo')+'">':'<span class="mg-brand-name" data-cs-edit="brand.name">'+esc(branding.name||'seiyun')+'</span>')+'<small data-cs-edit="brand.tagline">'+esc(branding.tagline??'YEMENI COFFEE')+'</small></div><span>OUR MENU</span></header>'+
+(hero?'<div class="mg-hero"><div class="mg-hero-copy"><small>FROM OUR COLLECTION</small><h2>'+esc(hero.name)+'</h2><p>'+esc(hero.ingredients)+'</p><div class="mg-hero-prices">'+prices(hero,state)+'</div></div>'+thumb(hero,opts.imageSpace,opts)+'</div>':'')+
 '<div class="mg-page-body">'+(items.length?items.map(p=>itemHTML(p,state,opts)).join(''):'<p class="mg-empty">No products to show yet. Add your menu items to get started.</p>')+'</div>'+
 '<footer class="mg-page-footer"><span>'+esc(t.title)+'</span><span>Page '+(index+1)+' of '+count+'</span></footer></section>';
 }
