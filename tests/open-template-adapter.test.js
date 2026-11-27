@@ -95,3 +95,14 @@ test('single-product special posters replace the native hero title, price and in
   assert(page.includes('Seiyun Yemeni Coffee'),id+' must show owner brand');
  }
 });
+
+test('overflow pages repeat the chosen genuine source layout instead of swapping to an unrelated generic page',()=>{
+ for(const id of ['food-menu-cafe-nord','food-menu-noodle-bar','food-menu-board-slide']){
+  const doc=pack.find(x=>x.id===id),result=adapter.render(create(26),doc,{format:'a4'});
+  assert(result.pageCount>=2,id);
+  for(const page of result.pages){
+   assert(page.includes('ot-source-page'),id+' overflow page must stay in the selected design');
+   assert(!page.includes('ot-companion-page'),id+' must not silently switch design styles');
+  }
+ }
+});
