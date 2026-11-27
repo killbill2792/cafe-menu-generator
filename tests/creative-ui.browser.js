@@ -66,6 +66,10 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  const resizeHandle=page.locator('.moveable-control-box .moveable-se').first();
  const resizeBox=await resizeHandle.boundingBox();
  assert(resizeBox,'selection exposes a south-east resize corner');
+ console.log('resize handle',await resizeHandle.evaluate(el=>{
+   const r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
+   return {element:el.outerHTML.slice(0,500),hit:hit?.outerHTML.slice(0,500),rect:{x:r.x,y:r.y,w:r.width,h:r.height}};
+ }));
  await page.mouse.move(resizeBox.x+resizeBox.width/2,resizeBox.y+resizeBox.height/2);
  await page.mouse.down();
  await page.mouse.move(resizeBox.x+resizeBox.width/2+24,resizeBox.y+resizeBox.height/2+12,{steps:6});
