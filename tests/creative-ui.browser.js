@@ -71,6 +71,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.mouse.move(resizeBox.x+resizeBox.width/2+24,resizeBox.y+resizeBox.height/2+12,{steps:6});
  await page.mouse.up();
  const afterSize=await page.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-cafe-nord']?.brand?.w);
+ if(!(afterSize>beforeSize))console.log('resize diagnostics',await page.evaluate(()=>({d:SeiyunLayoutEditor.diagnostics,size:draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-cafe-nord']?.brand,markup:document.querySelector('#csArtPage [data-layout-key="brand"]')?.outerHTML?.slice(0,500)})));
  assert(afterSize>beforeSize,'pulling the corner enlarges the actual saved brand title');
  await page.locator('[data-cs-action="designs"]').click();
  await page.locator('[data-cs-design="photo-cards-dark"]').click();
