@@ -21,7 +21,7 @@ export default function SeiyunNativeBridge() {
      const url=safeUrl(c.photoUrl);
      if(!url){send('SEIYUN_NATIVE_ERROR',{error:'Select a real drink photograph in your product library before opening the animation editor.'});pending=false;return;}
      let attempts=0;
-     const init=()=>{
+     const init=async()=>{
        attempts++;
        if(!useProjectStore.getState().booted){if(attempts<50){setTimeout(init,120);return;}send('SEIYUN_NATIVE_ERROR',{error:'Motion Studio did not finish loading its native project.'});pending=false;return;}
        try{
@@ -34,7 +34,14 @@ export default function SeiyunNativeBridge() {
          }
          // A product asset comes ONLY from the owner's explicit photo selection.
          // Never fetch the prior UI screenshot or substitute sample assets.
-         scene.addAssets([{url,name:String(p.name||'Selected drink').slice(0,95),kind:'image'}]);
+         const displayName=String(p.name||'Selected drink').slice(0,95);
+         // A prepared transparent photo is a local derivative, not a new
+         // permanent source upload. Let the native asset DB keep the bytes.
+         if(url.startsWith('data:')||url.startsWith('blob:')){
+           const blob=await fetch(url).then(r=>r.blob());
+           const localUrl=URL.createObjectURL(blob);
+           scene.addAssets([{url:localUrl,blob,name:displayName,kind:'image'}]);
+         }else scene.addAssets([{url,name:displayName,kind:'image'}]);
          // A brand-new upstream project intentionally has ZERO layers.
          // A photo in the media library does not appear until we create a real
          // native motion track. Start on an actual one-hero Spotlight preset.
