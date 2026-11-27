@@ -38,7 +38,7 @@ function select(el){
  const a=active;
  if(a.target===el)return;
  if(a.target)a.target.classList.remove('cs-element-selected');
- a.target=el;el.classList.add('cs-element-selected');diagnostics.selects++;diagnostics.lastKey=el.dataset.layoutKey||el.dataset.sceneLayer||'';
+ a.target=el;el.classList.add('cs-element-selected');if(a.mode==='showcase')window.SeiyunShowcase?.pauseForEdit?.();diagnostics.selects++;diagnostics.lastKey=el.dataset.layoutKey||el.dataset.sceneLayer||'';
  active?.resizeCleanup?.();
  if(moveable){moveable.destroy();moveable=null;}
  if(typeof window.Moveable!=='function'){
