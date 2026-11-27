@@ -13,7 +13,7 @@ const namesOf=state=>(state?.products||[]).filter(p=>p&&p.enabled!==false);
 const brand=state=>String(state?.branding?.name||"Your Café").slice(0,100);
 const tagline=state=>String(state?.branding?.tagline||"OUR MENU").slice(0,90);
 const price=(p,state)=>{const x=Number(p?.sizes?.[0]?.price);if(!Number.isFinite(x))return "";try{return new Intl.NumberFormat("en-US",{style:"currency",currency:state.currency||"USD"}).format(x)}catch{return "$"+x.toFixed(2)}};
-const numeric=t=>/^\s*\+?(?:[$€£]\s*)?\d{1,4}(?:[.,]\d{1,2})?\s*$/.test(String(t||""));
+const numeric=t=>/^\s*\+?(?:[$€£]\s*)?\d{1,4}(?:[.,]\d{1,2})?(?:\s*\/\s*\d{1,4}(?:[.,]\d{1,2})?)?\s*$/.test(String(t||""));
 const formatted=(page)=>page.elements.map((e,i)=>({e,i})).filter(t=>t.e.type==="text");
 const font=e=>N(e.fontSize,16,1,1200);
 function brandIndex(page,doc){
@@ -27,7 +27,7 @@ function slotPlan(page,doc){
  for(const p of prices){
   const matches=txt.filter(t=>t.i!==p.i&&!used.has(t.i)&&!numeric(t.e.text)&&
    !String(t.e.text).includes("\n")&&String(t.e.text).length<90&&t.e.x<p.e.x&&
-   N(t.e.fontWeight,500)>=500&&font(t.e)>=Math.max(10,font(p.e)*.36)&&
+   N(t.e.fontWeight,500)>=350&&font(t.e)>=Math.max(10,font(p.e)*.4)&&
    font(t.e)<=Math.max(55,font(p.e)*1.65)&&Math.abs(t.e.y-p.e.y)<Math.max(17,font(t.e)*.42));
   matches.sort((a,b)=>Math.abs(a.e.y-p.e.y)*5+Math.abs(p.e.x-(a.e.x+a.e.w))*.07-(N(a.e.fontWeight,500)/500));
   const name=matches[0];if(!name)continue;
@@ -40,7 +40,10 @@ function slotPlan(page,doc){
    !/^(special|mon|tue|wed|thu|fri|sat|sun|menu|lunch|week\s*\d+)/i.test(String(t.e.text).trim()));
   if(!options.length&&/special-story|onigiri-label/.test(doc.id))
    options=txt.filter(t=>t.i!==head&&!numeric(t.e.text)&&font(t.e)>=60&&t.e.y>doc.height*.3);
-  options.slice(0,8).forEach(t=>slots.push({name:t.i,price:-1,desc:-1,y:t.e.y,x:t.e.x}));
+  if(/lunch-week/.test(doc.id)){
+   options=options.filter(t=>font(t.e)>=27&&N(t.e.fontWeight,400)>=650);
+  }
+  options.slice(0,12).forEach(t=>slots.push({name:t.i,price:-1,desc:-1,y:t.e.y,x:t.e.x}));
  }
  slots.sort((a,b)=>a.y-b.y||a.x-b.x);
  for(const slot of slots){
@@ -137,6 +140,8 @@ function render(state,doc,options={}){
  let cursor=0,bg="#f5eee3",ink="#342a24";
  for(const originalPage of doc.pages){
   const n=slotPlan(originalPage,doc).length;
+  // A decorative source cover is not a usable menu thumbnail or default print page.
+  if(n===0&&all.length>0)continue;
   const page=sourcePage(state,doc,originalPage,all.slice(cursor,cursor+n),format,overrides,pages.length);
   pages.push(page.html);cursor+=Math.min(n,all.length-cursor);bg=page.bg;ink=page.ink;
  }
