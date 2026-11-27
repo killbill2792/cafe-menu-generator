@@ -129,3 +129,33 @@ body:has(.cs-app){margin:0;background:#f7f3ec;color:var(--cs-brown);font-family:
 .cs-design-caption strong{font-size:11px}
 .cs-design-caption small{font-size:9px}
 }
+
+/* Full-frame cinematic product composition. One product only, same canvas as exports. */
+.cs-showcase-grid{grid-template-columns:minmax(270px,390px) minmax(320px,1fr);gap:24px}
+.cs-showcase-tools{align-content:start}
+.cs-choose-photos{display:grid;gap:10px}
+.cs-choose-photos>strong{font:700 17px 'Fraunces',Georgia,serif}
+.cs-scene-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cs-scene-option{display:flex;flex-direction:column;gap:7px;padding:7px;text-align:left;cursor:pointer;border:2px solid #e0cfc0;border-radius:12px;background:#faf6ef;overflow:hidden;color:#50372a}
+.cs-scene-option.selected{border-color:#8b4a30;box-shadow:0 0 0 2px #b2734b26}
+.cs-scene-option canvas{display:block;max-width:100%;width:100%;aspect-ratio:9/14;height:auto;border-radius:8px;object-fit:cover;background:#37231b}
+.cs-scene-option span{display:grid;gap:2px;padding:2px}
+.cs-scene-option b{font:800 12px 'DM Sans',Arial}
+.cs-scene-option small{font:500 10px/1.3 'DM Sans',Arial;color:#876b59}
+.cs-ad-stage{position:relative;width:min(100%,510px);max-width:none;aspect-ratio:9/16;overflow:hidden;background:#291b15;border-radius:12px;border:1px solid #c5a18a;box-shadow:0 24px 48px #24180c35}
+.cs-ad-stage.cs-stage-landscape{aspect-ratio:16/9;width:min(100%,730px)}
+.cs-ad-stage.cs-stage-square{aspect-ratio:1;width:min(100%,580px)}
+.cs-ad-stage::before{display:none}
+.cs-ad-stage .cs-motion,.cs-ad-stage .cs-hero-host{position:absolute;inset:0;z-index:2;background:transparent;min-height:0}
+.cs-hero-canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+.cs-hero-canvas:focus-visible{outline:3px solid #f6ce9e;outline-offset:-4px}
+.cs-hero-inline-input{position:absolute;z-index:9;transform:translateY(-8%);padding:6px 9px;min-width:115px;min-height:30px;border:2px solid #dfb476;border-radius:7px;background:#fffaf3;color:#281b13;font:700 16px 'DM Sans',sans-serif;box-shadow:0 6px 18px #0007}
+.cs-preview-topline{display:flex;justify-content:space-between;width:100%;color:#907763;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:800}
+.cs-artwork-help{font:500 12px/1.5 'DM Sans',Arial,sans-serif;color:#876c5d;text-align:center;max-width:540px;margin:2px 0}
+.cs-ad-customize{border:1px solid #e2d5c6;border-radius:10px;padding:12px;background:#fffaf2}
+.cs-ad-customize summary{font:800 12px 'DM Sans',sans-serif;cursor:pointer}
+.cs-ad-fields{display:grid;gap:12px;margin-top:12px}
+.cs-check{font-size:11px;color:#725645;display:flex;align-items:center;gap:7px}
+.cs-no-motion{height:100%;display:flex;align-items:center;justify-content:center;color:#f9e4ca;font-size:15px}
+@media(max-width:1020px){.cs-showcase-grid{grid-template-columns:1fr}.cs-showcase-tools{grid-template-columns:1fr}.cs-scene-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}.cs-showcase-tools .cs-motion-grid,.cs-showcase-tools>.cs-btn,.cs-showcase-tools>strong,.cs-showcase-tools .cs-photo-thumbs{grid-column:auto}}
+@media(max-width:650px){.cs-scene-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.cs-ad-stage{max-width:100%}}
