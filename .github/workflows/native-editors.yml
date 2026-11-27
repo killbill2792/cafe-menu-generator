@@ -8,6 +8,10 @@ on:
       - '.github/workflows/native-editors.yml'
   workflow_dispatch:
 
+concurrency:
+  group: native-editors-build-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -46,19 +50,22 @@ jobs:
           name: native-opentempl-and-motion-studio-built
           path: studio/native
           retention-days: 5
-      - name: Record built native editor assets on the feature branch
+      - name: Publish the validated native bundles on the latest feature-branch head
         shell: bash
         run: |
+          set -euo pipefail
+          tempdir=$(mktemp -d)
+          cp -a studio/native "$tempdir/native"
+          git fetch origin feat/native-opentempl-motion-studio
+          git reset --hard origin/feat/native-opentempl-motion-studio
+          rm -rf studio/native
+          cp -a "$tempdir/native" studio/native
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git config user.name 'github-actions[bot]'
           git add -A studio/native
           if git diff --cached --quiet; then
-            echo 'Native apps are already current'
+            echo 'Native source bundle is already current'
           else
-            git commit -m 'build(native): vendor complete pinned OpenTempl and Motion Studio static applications [skip ci]'
-            # The owner-integration branch may have advanced while the
-            # 2 upstream apps were compiling. Rebase built assets onto it.
-            git fetch origin feat/native-opentempl-motion-studio
-            git rebase origin/feat/native-opentempl-motion-studio
+            git commit -m 'build(native): vendor complete pinned native editors [skip ci]'
             git push origin HEAD:feat/native-opentempl-motion-studio
           fi
