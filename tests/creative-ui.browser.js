@@ -46,6 +46,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  const next=await page.locator('.scene-card').first().evaluate(n=>n.style.transform);
  assert.notEqual(initial,next,'actual motion changes frame position');
  await page.locator('[data-cs-motion="orbit"]').click();
+ await page.locator('#csMotion[data-mode="orbit"]').waitFor({timeout:12000});
  assert.equal(await page.locator('#csMotion').getAttribute('data-mode'),'orbit','motion choices switch modes');
  // GIF export uses the real vendored encoder, not a mocked output.
  const dl=page.waitForEvent('download',{timeout:65000});
