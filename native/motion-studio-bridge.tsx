@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import { useSceneStore } from '@/store/useSceneStore';
 import { useProjectStore } from '@/store/useProjectStore';
+import { getRendererInstance } from '@/lib/rendererInstance';
 type Message={type?:string;nonce?:string;catalog?:any};
 const safeUrl=(value:unknown)=>{const s=String(value||'');return /^https:\/\//i.test(s)||/^blob:/i.test(s)||/^data:image\/(?:png|jpeg|webp);base64,/i.test(s)?s:''};
 export default function SeiyunNativeBridge() {
@@ -28,6 +29,7 @@ export default function SeiyunNativeBridge() {
          const scene=useSceneStore.getState();
          if(c.savedScene&&typeof c.savedScene==='object'){scene.hydrate(c.savedScene);}
          else{
+           scene.blankScene();
            scene.clearAssets();
            scene.setAspect(c.aspect==='landscape'?'16:9':c.aspect==='square'?'1:1':'9:16');
            scene.setDuration(7);
@@ -46,13 +48,34 @@ export default function SeiyunNativeBridge() {
          // A photo in the media library does not appear until we create a real
          // native motion track. Start on an actual one-hero Spotlight preset.
          if(useSceneStore.getState().tracks.length===0){
-           useSceneStore.getState().addTrack('stories-01');
-           useSceneStore.getState().setActiveTemplate('stories-01');
-           useSceneStore.getState().setValue('count',1);
+           // Use the upstream native single-hero Ken Burns camera composition,
+           // not the horizontal gallery that can move a lone drink off-centre.
+           const st=useSceneStore.getState();
+           st.addTrack('scale-01');
+           st.setActiveTemplate('scale-01');
+           st.setValue('count',1);
+           st.setValue('cardSize',275);
+           st.setValue('zoom',12);
+           st.setValue('anchor','center');
+           st.setValue('spin','off');
+           st.setValue('cornerRadius',0);
+           st.renameTrack(useSceneStore.getState().activeTrackId,displayName);
          }
-         if(c.brand?.accent&&/^#[0-9a-f]{6}$/i.test(c.brand.accent))
+         if(!c.savedScene&&c.brand?.accent&&/^#[0-9a-f]{6}$/i.test(c.brand.accent))
            scene.setBackground({color:c.brand.accent,source:'color',userSet:true});
          scene.setPlaying(true);
+         // Store boot and asset import are NOT proof that the renderer or mobile
+         // workspace is ready. Wait for the actual native canvas to mount.
+         let rendererReady=false;
+         for(let wait=0;wait<150;wait++){
+           const renderer=getRendererInstance();
+           const stage=document.querySelector<HTMLCanvasElement>('canvas.stage-canvas');
+           if(renderer&&stage?.isConnected&&stage.width>0&&stage.height>0&&stage.getBoundingClientRect().width>0){
+             try{renderer.renderFrame(useSceneStore.getState().frame);rendererReady=true;break;}catch{}
+           }
+           await new Promise(resolve=>setTimeout(resolve,200));
+         }
+         if(!rendererReady)throw new Error('The native motion renderer did not initialize; try another supported browser or reload.');
          send('SEIYUN_NATIVE_LOADED',{presets:'full-upstream-motion-library',layers:useSceneStore.getState().tracks.length,assets:useSceneStore.getState().assets.length,templateId:useSceneStore.getState().activeTemplateId});
          // Persist a serializable scene, not the native editor's functions or original photo blobs.
          let last='',timer:ReturnType<typeof setTimeout>|undefined;
