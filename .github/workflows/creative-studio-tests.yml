@@ -1,12 +1,17 @@
 name: Creative Studio tests
 on:
   push:
-    branches: [feat/creative-studio-two-features, main]
+    branches: [feat/real-template-gallery-cinematic-hero, main]
     paths:
       - 'studio/creative-*.js'
       - 'studio/creative-*.css'
       - 'studio/menu-gallery.js'
       - 'studio/vendor/**'
+      - 'studio/source-menu-adapter.js'
+      - 'studio/source-menu.css'
+      - 'studio/hero-scenes.js'
+      - 'studio/index.html'
+      - 'tests/source-menu.test.js'
       - 'tests/creative-core.test.js'
       - 'tests/creative-ui.browser.js'
       - '.github/workflows/creative-studio-tests.yml'
@@ -20,7 +25,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/creative-core.test.js tests/menu-gallery.test.js
+      - run: node --test tests/creative-core.test.js tests/menu-gallery.test.js tests/source-menu.test.js
 
   browser:
     runs-on: ubuntu-24.04
