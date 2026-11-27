@@ -9,6 +9,7 @@ const layoutCore=()=>window.SeiyunLayoutCore;
 function detach(){
  if(handler&&active?.container)active.container.removeEventListener('pointerdown',handler,true);
  handler=null;
+ active?.resizeCleanup?.();
  if(moveable){moveable.destroy();moveable=null;}
  if(active?.target)active.target.classList.remove('cs-element-selected');
  active=null;
@@ -38,6 +39,7 @@ function select(el){
  if(a.target===el)return;
  if(a.target)a.target.classList.remove('cs-element-selected');
  a.target=el;el.classList.add('cs-element-selected');diagnostics.selects++;diagnostics.lastKey=el.dataset.layoutKey||el.dataset.sceneLayer||'';
+ active?.resizeCleanup?.();
  if(moveable){moveable.destroy();moveable=null;}
  if(typeof window.Moveable!=='function'){
   const s=document.querySelector('#csMessage');if(s)s.textContent='Drag handles are temporarily unavailable. Check the editing library connection.';
@@ -113,6 +115,59 @@ function select(el){
   moveable?.updateRect();
  });
  moveable.on('resizeEnd',()=>{diagnostics.resizeEnds++;commit();});
+ // Moveable supplies the touch handles and drag affordance. On transformed
+ // menu pages, its resize gesture may stop after moving a target. Handle the
+ // corner pointer coordinates directly so resizing remains reliable.
+ let resizeCleanup=()=>{};
+ const control=moveable.getControlBoxElement?.()||document.querySelector('.moveable-control-box.cs-moveable-handles');
+ if(control){
+  let gesture=null;
+  const onDown=ev=>{
+   const corner=ev.target.closest?.('.moveable-control.moveable-direction');
+   if(!corner||!control.contains(corner)||!active||active.target!==el)return;
+   const direction=corner.dataset.direction||'se';
+   if(!/^(nw|ne|sw|se)$/.test(direction))return;
+   ev.preventDefault();ev.stopPropagation();
+   gesture={pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,direction,rect:nativeBox(el),layer:readLayer()};
+   try{corner.setPointerCapture(ev.pointerId)}catch(_){}
+  };
+  const onMouseDown=ev=>{
+   if(gesture&&control.contains(ev.target)){ev.preventDefault();ev.stopPropagation();}
+  };
+  const onMove=ev=>{
+   if(!gesture||gesture.pointerId!==ev.pointerId)return;
+   ev.preventDefault();
+   const {rect,direction}=gesture,ratio=a.mode==='menu'?(screenRatio(stage)||1):1;
+   const dx=(ev.clientX-gesture.x)/ratio,dy=(ev.clientY-gesture.y)/ratio;
+   if(a.mode==='showcase'){
+    const v=gesture.layer||{scale:1,fontSize:48},signedDx=direction.includes('w')?-dx:dx;
+    const factor=clamp((rect.w+signedDx)/Math.max(1,rect.w),.3,3);
+    saveScene({scale:clamp(v.scale*factor,.4,2.6),
+      fontSize:key==='title'?clamp(v.fontSize*factor,18,150):v.fontSize});
+   }else{
+    const left=direction.includes('w'),top=direction.includes('n');
+    const w=clamp(rect.w+(left?-dx:dx),24,native.w),h=clamp(rect.h+(top?-dy:dy),20,native.h);
+    const x=left?rect.x+rect.w-w:rect.x,y=top?rect.y+rect.h-h:rect.y;
+    const factor=Math.min(w/Math.max(1,rect.w),h/Math.max(1,rect.h));
+    saveMenu({x,y,w,h,fontSize:clamp(rect.fontSize*factor,8,180)});
+   }
+   dirty=true;moveable?.updateRect();
+  };
+  const onUp=ev=>{if(!gesture||gesture.pointerId!==ev.pointerId)return;gesture=null;commit();};
+  document.addEventListener('pointerdown',onDown,true);
+  document.addEventListener('mousedown',onMouseDown,true);
+  document.addEventListener('pointermove',onMove,true);
+  document.addEventListener('pointerup',onUp,true);
+  document.addEventListener('pointercancel',onUp,true);
+  resizeCleanup=()=>{
+   document.removeEventListener('pointerdown',onDown,true);
+   document.removeEventListener('mousedown',onMouseDown,true);
+   document.removeEventListener('pointermove',onMove,true);
+   document.removeEventListener('pointerup',onUp,true);
+   document.removeEventListener('pointercancel',onUp,true);
+  };
+ }
+ active.resizeCleanup=resizeCleanup;
  return moveable;
 }
 return {attach,detach,select,diagnostics};
