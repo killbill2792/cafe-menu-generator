@@ -52,6 +52,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.mouse.move(brandBox.x+brandBox.width/2+32,brandBox.y+brandBox.height/2+24,{steps:5});
  await page.mouse.up();
  const savedBrand=await page.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-cafe-nord']?.brand);
+ if(!savedBrand)console.log('moveable brand diagnostics',await page.evaluate(()=>({drag:SeiyunLayoutEditor.diagnostics,editable:document.querySelector('#csArtPage [data-layout-key="brand"]')?.isContentEditable,scale:document.querySelector('#csArtPage')?.style.transform})));
  assert(savedBrand&&Number.isFinite(savedBrand.x),'dragging title persists actual source layout coordinates');
  await page.locator('[data-cs-action="designs"]').click();
  await page.locator('[data-cs-design="photo-cards-dark"]').click();
