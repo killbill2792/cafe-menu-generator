@@ -99,7 +99,7 @@ async function downloadGif(state,cfg,core){
   renderFrame(ctx,photo,product,core.normalizeBrand(state.branding||{}),cfg,mod,i/count,w,h,state);
   const rgba=ctx.getImageData(0,0,w,h).data;
   const pal=quantize(rgba,128,{format:'rgb565'}),indexed=applyPalette(rgba,pal);
-  gif.writeFrame(indexed,w,h,{palette:pal,delay:100});
+  gif.writeFrame(indexed,w,h,{palette:pal,delay:Math.round(((cfg.duration||7)*1000)/count)});
   if(i%5===0)await new Promise(resolve=>setTimeout(resolve,0));
  }
  gif.finish();
