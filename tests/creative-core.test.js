@@ -49,9 +49,9 @@ test('real image zoom settings are independent from photo frame width',()=>{
  assert.match(html,/scale\(1\.65\)/);assert.match(html,/translate\(18%, -12%\)/);
 });
 test('six motion modes are available, defaults safe and no AI path',()=>{
- assert.deepEqual(core.motionModes(),['portal','orbit','cascade','tunnel','carousel','marquee']);
+ assert.deepEqual(core.motionModes(),['cinematic','ingredients','spotlight','iced','warm','minimal']);
  const value=core.normalizeShowcase({mode:'invalid',speed:600,duration:-3,background:'not a color'},state());
- assert.equal(value.mode,'portal');assert.equal(value.speed,2.5);assert.equal(value.duration,3);
+ assert.equal(value.mode,'cinematic');assert.equal(value.speed,2.5);assert.equal(value.duration,3);
  assert.match(value.background,/^#[0-9a-f]{6}$/i);
 });
 test('record format is labelled honestly on supported browsers',()=>{
