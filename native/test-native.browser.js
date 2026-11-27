@@ -13,7 +13,7 @@ const harness=['<!doctype html><html><head><meta charset="utf-8"></head><body><h
  'const prods=Array.from({length:26},(_,i)=>({id:"p"+i,name:"Seiyun Coffee "+i,ingredients:"cinnamon, milk, cardamom",enabled:true,category:"Coffee",photos:[photo],primary:0,sizes:[{name:"12 oz",price:7+i/10}]}));',
  'window.addEventListener("message",evt=>{if(evt.origin!==location.origin||evt.source!==frame.contentWindow||evt.data.nonce!==nonce)return;',
  'const msg=evt.data;if(msg.type==="SEIYUN_NATIVE_READY"&&!sent){sent=true;frame.contentWindow.postMessage({type:"SEIYUN_NATIVE_INIT",nonce,catalog:mode==="menu"?{brand:{name:"Seiyun Yemeni Coffee",tagline:"Yemeni Coffee"},products:prods,currency:"USD",templateId:"food-menu-cafe-nord"}:{brand:{name:"Seiyun Yemeni Coffee",accent:"#9b5837"},product:prods[0],photoUrl:photo,aspect:"portrait"}},location.origin);}',
- 'if(msg.type==="SEIYUN_NATIVE_LOADED")document.querySelector("#status").textContent="LOADED";',
+ 'if(msg.type==="SEIYUN_NATIVE_LOADED"){document.querySelector("#status").textContent="LOADED";document.querySelector("#status").dataset.layers=String(msg.layers??0);document.querySelector("#status").dataset.assets=String(msg.assets??0);}',
  'if(msg.type==="SEIYUN_NATIVE_ERROR")document.querySelector("#status").textContent="ERROR "+msg.error;',
  'if(msg.type==="SEIYUN_NATIVE_SAVE")document.querySelector("#status").dataset.saved=msg.snapshot?"menu":"motion";',
  '});</script></body></html>'].join('\n');
@@ -46,7 +46,14 @@ const server=http.createServer((req,res)=>{
    assert(/Seiyun Yemeni Coffee/.test(fullText),'OpenTempl must include current owner branding');
    assert(/Seiyun Coffee 0/.test(fullText),'OpenTempl must bind real product names');
   }
-  if(mode==='motion')assert(/Library|Presets|Templates/i.test(fullText),'Native motion editor includes a real browsable library');
+  if(mode==='motion'){
+   assert(/Library|Presets|Templates/i.test(fullText),'Native motion editor includes a real browsable library');
+   const layers=Number(await page.locator('#status').getAttribute('data-layers'));
+   const assets=Number(await page.locator('#status').getAttribute('data-assets'));
+   assert(layers>=1,'The selected drink must have at least one actual upstream native timeline layer; a blank media library is not acceptable');
+   assert(assets>=1,'The owner-approved product photo must be imported as an upstream native media asset');
+   assert(!/NaN/.test(fullText),'Native motion controls cannot show NaN after media import');
+  }
   await page.screenshot({path:path.join(shots,'native-'+mode+'-desktop.png'),fullPage:true});
   assert(!errors.some(s=>/Cannot read properties of undefined|Hydration failed|Uncaught TypeError/i.test(s)),mode+' critical JS errors: '+errors.slice(0,3));
   await context.close();
