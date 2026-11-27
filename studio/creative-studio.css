@@ -124,3 +124,13 @@ body:has(.cs-app){margin:0;background:#f7f3ec;color:var(--cs-brown);font-family:
 .cs-cinematic-copy [data-cs-edit]{cursor:text;text-underline-offset:3px}
 .cs-hero-product[data-cs-target],.cs-cinematic-copy[data-cs-target]{touch-action:none}
 @media(max-width:650px){.cs-scene-choice-preview{height:100px}.cs-cinematic-options{gap:6px}}
+
+/* WYSIWYG selection feedback and touch-friendly Moveable controls. */
+.cs-element-selected{outline:2px solid #edac68!important;outline-offset:3px!important;cursor:move!important}
+.moveable-control-box.cs-moveable-handles{z-index:100!important;pointer-events:auto!important}
+.cs-moveable-handles .moveable-control{width:13px!important;height:13px!important;background:#fff6e9!important;border:3px solid #8c4b32!important;box-shadow:0 2px 10px #0003}
+.cs-moveable-handles .moveable-line{background:#ae6844!important}
+.cs-moveable-handles .moveable-direction{touch-action:none}
+.cs-app .mg-export-page [data-layout-key]{cursor:move;touch-action:none}
+.cs-app .ot-list-grid .ot-list-item[data-layout-key]{touch-action:none}
+.cs-app .cs-ad-stage [data-scene-layer]{cursor:move;touch-action:none}
