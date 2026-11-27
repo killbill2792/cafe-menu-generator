@@ -47,7 +47,7 @@ function templateTiles(){
 function menuUI(){
  const lib=window.SeiyunMenuGallery,opts=lib.getSettings(draft),data=lib.renderPages(draft,opts);
  page=Math.max(0,Math.min(data.pageCount-1,page));
- return '<div class="cs-intro"><div><small>MENU GENERATOR</small><h1>Make your menu yours.</h1><p>Your café information is already here. Click text or a photo on the finished menu to edit.</p></div><div class="cs-actions"><button class="cs-btn" data-cs-action="designs">Browse '+lib.registry.length+' designs</button><button class="cs-btn" data-cs-action="brand">Customize brand</button></div></div>'+
+ return '<div class="cs-intro"><div><small>MENU GENERATOR</small><h1>Make your menu yours.</h1><p>Your café information is already here. Tap text or a card directly to edit, drag and resize it. Your download uses the same layout.</p></div><div class="cs-actions"><button class="cs-btn" data-cs-action="designs">Browse '+lib.registry.length+' designs</button><button class="cs-btn" data-cs-action="brand">Customize brand</button></div></div>'+
  (templatesOpen?'<section class="cs-designs"><div class="cs-panel-head"><strong>Choose your menu design</strong><button data-cs-action="designs">×</button></div><input id="csDesignSearch" type="search" placeholder="Search designs" value="'+esc(search)+'"><div class="cs-design-grid">'+templateTiles()+'</div></section>':'')+
  brandPanel()+
  '<section class="cs-workspace"><div class="cs-toolbar"><label>Format <select id="csFormat">'+Object.entries(lib.formats).map(([v,o])=>'<option value="'+v+'" '+(opts.format===v?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select></label><span id="csItems">'+data.productCount+' items · '+data.pageCount+' pages</span><div class="cs-actions"><button class="cs-btn" data-cs-action="add-drink">+ Product</button><button class="cs-btn" data-cs-action="pdf">PDF / Print</button><button class="cs-btn primary" data-cs-action="png">Download PNG</button><button class="cs-btn" data-cs-action="jpg">JPG</button></div></div>'+
@@ -72,6 +72,7 @@ function refreshMenu(){
  const i=$('#csItems');if(i)i.textContent=data.productCount+' items · '+data.pageCount+' pages';
  const prev=$('[data-cs-action="prev"]'),next=$('[data-cs-action="next"]');if(prev)prev.disabled=page===0;if(next)next.disabled=page===data.pageCount-1;
  fitPage();
+ window.SeiyunLayoutEditor?.attach?.($('#csArtPage'),{state:draft,templateId:lib.getSettings(draft).templateId,mode:'menu',onCommit:save});
 }
 function showcaseUI(){
  const cfg=showcase(),p=core.chooseProduct(draft,cfg.productId),photo=core.selectedShowcasePhoto(p),b=branding();
@@ -103,8 +104,18 @@ function renderCreative(){
  window.SeiyunShowcase?.destroy?.();
  const root=$('#app');root.innerHTML=shell(tab==='menu'?menuUI():showcaseUI());
  const n=++renderToken;
- if(tab==='menu')requestAnimationFrame(()=>{if(n===renderToken)fitPage();});
- else window.SeiyunShowcase?.mount?.($('#csMotion'),draft,showcase(),core,notify);
+ if(tab==='menu')requestAnimationFrame(()=>{
+  if(n!==renderToken)return;
+  fitPage();
+  window.SeiyunLayoutEditor?.attach?.($('#csArtPage'),{state:draft,templateId:window.SeiyunMenuGallery.getSettings(draft).templateId,mode:'menu',onCommit:save});
+ });
+ else {
+  window.SeiyunShowcase?.mount?.($('#csMotion'),draft,showcase(),core,notify);
+  requestAnimationFrame(()=>{
+   if(n!==renderToken)return;
+   window.SeiyunLayoutEditor?.attach?.($('#csAdStage'),{state:draft,mode:'showcase',onCommit:save});
+  });
+ }
 }
 render=renderCreative;
 function dataClick(ev){
