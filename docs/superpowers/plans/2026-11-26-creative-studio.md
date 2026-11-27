@@ -1,6 +1,6 @@
 # Two-feature Creative Studio implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace owner-facing five-tab Studio with two downloadable-artifact features using current Supabase catalog and existing MIT motion engine.
 
@@ -26,24 +26,33 @@
 
 ### Task 1 — Replace owner navigation
 Files: `studio/creative-studio.js`, `studio/creative-studio.css`, `studio/index.html`.
-- [ ] Write failing browser/DOM test: owner UI has only two primary routes and still has hidden legacy uploader.
-- [ ] Implement new shell/router and separate auth/public route handling.
-- [ ] Verify desktop/mobile and existing screen URLs; commit.
+- [x] Write failing browser/DOM test: owner UI has only two primary routes and still has hidden legacy uploader.
+- [x] Implement new shell/router and separate auth/public route handling.
+- [x] Verify desktop/mobile and existing screen URLs; commit.
 
 ### Task 2 — Menu artboard direct editing
 Files: `studio/menu-gallery.js`, `studio/creative-studio.js`, CSS, tests.
-- [ ] Write failing tests: click-to-edit brand/name/ingredients/price mapped to exact product, save on blur, photo image zoom independent from box; no script injection.
-- [ ] Reuse gallery `renderPages`, brand customization and existing PDF/PNG/JPG actions.
-- [ ] Browser-test 24 menu choices, 23 items, direct edits and downloading; commit.
+- [x] Write failing tests: click-to-edit brand/name/ingredients/price mapped to exact product, save on blur, photo image zoom independent from box; no script injection.
+- [x] Reuse gallery `renderPages`, brand customization and existing PDF/PNG/JPG actions.
+- [x] Browser-test 24 menu choices, 23 items, direct edits and downloading; commit.
 
 ### Task 3 — Genuine motion and export
 Files: `studio/vendor/motion-lab/*`, `studio/creative-studio.js`, CSS, tests.
-- [ ] Vend MIT upstream assets with exact license; write fail-first tests for six modes, product selection, saved photos and no filter.
-- [ ] Integrate `MotionScene` modes into product showcase, responsive real-time preview; build native video/GIF export path for supported browsers.
-- [ ] Test successive frames differ, selected image visible, export blob has correct container MIME; commit.
+- [x] Vend MIT upstream assets with exact license; write fail-first tests for six modes, product selection, saved photos and no filter.
+- [x] Integrate `MotionScene` modes into product showcase, responsive real-time preview; build native video/GIF export path for supported browsers.
+- [x] Test successive frames differ, selected image visible, export blob has correct container MIME; commit.
 
 ### Task 4 — Regression, review and handoff
 Files: `agent.md`, `studio/README.md`, `specs/README.md`.
-- [ ] Full test suite and browser/print check; confirm no disruption to existing Supabase Auth and current saved drafts.
-- [ ] Create PR, inspect CI, merge only if checks green and scope respected.
-- [ ] Check Cloudflare deployment separately; document unverified live-session/video codecs.
+- [x] Full test suite and browser/print check; confirm no disruption to existing Supabase Auth and current saved drafts.
+- [x] Create PR, inspect CI, merge only if checks green and scope respected.
+- [ ] Confirm Cloudflare deployment and signed-in Supabase photo uploads/exports on the live domain (environment access still unavailable).
+
+## Verification record — 2026-11-26/27
+- [x] GitHub PR #4 squash-merged into main as `8056a43efc1b5b6280d7da688346a9ce5c263dd9`.
+- [x] Final branch GitHub Actions `Creative Studio tests` successful (runs `45915665038` and `45915658257`): 8 creative-core tests + 7 existing menu tests; Chromium browser test verifies exactly two owner routes, inline name binding, true photo zoom, 24 template options, real Motion Lab card motion, six-mode change, 36-frame valid animated GIF and native MP4 output.
+- [x] Chromium GIF was 615,131 bytes; MP4 was 1,470,360 bytes; no uncaught page errors; mobile horizontal overflow 0 pixels. Demo used a 1×1 dummy red product photo, not actual Seiyun customer assets.
+- [x] Existing menu gallery tests passed. No new Supabase tables or RLS changes.
+- [x] Reviewed generated desktop/mobile screenshots (available as CI artifact `creative-studio-visual-checks`). Browser test screenshots show placeholders unless current owner photos are injected.
+- [ ] Live Cloudflare Worker build, authenticated photo upload, Supabase Storage CORS and iPhone Safari native video encoder support not confirmed; browser codec support varies.
+- [ ] Importing and testing additional OpenTempl/Canvix menu design packs beyond current 24 combinations remains an independent follow-up; the present PR focuses on owner UX replacement and genuine motion component integration.
