@@ -164,7 +164,7 @@ if(ev.target.id==='mgPhotoProduct'){const inp=document.querySelector('#mgProduct
 if(inp){inp.disabled=!ev.target.value;inp.value=ev.target.value?(o.photoSizeByProduct[ev.target.value]||o.imageSpace):o.imageSpace;}if(v)v.textContent=inp.value+'%';}
 });
 }
-root.SeiyunMenuGallery={registry:REGISTRY,formats:FORMATS,sources:SOURCE,defaults:DEFAULT,productsOf,renderPages,capacityFor,getSettings,currentPage:0};
+root.SeiyunMenuGallery={registry:REGISTRY,formats:FORMATS,sources:SOURCE,defaults:DEFAULT,productsOf,renderPages,capacityFor,getSettings,printMenu,exportImages,currentPage:0};
 root.renderMenuGallery=renderMenuGallery;
 if(typeof document!=='undefined')bindEvents();
 })(typeof window!=='undefined'?window:globalThis);
