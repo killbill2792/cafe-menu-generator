@@ -73,10 +73,11 @@ function article(p,state,opts,idx,meta){
 function pageHTML(doc,meta,state,opts,items,index,count,formats){
  const format=formats[opts.format]||formats.letter,palette=documentPalette(doc);
  const brand=state?.branding||{},name=String(brand.name||'Your Café'),tagline=String(brand.tagline??'FRESHLY MADE');
- const accent=cssColor(brand.accent,palette.accent),bg=cssColor(brand.background,palette.bg),ink=cssColor(brand.text,palette.color);
+ const customized=brand.customColors===true;const accent=customized?cssColor(brand.accent,palette.accent):palette.accent,bg=customized?cssColor(brand.background,palette.bg):palette.bg,ink=customized?cssColor(brand.text,palette.color):palette.color;
  const outFormat=opts.format==='landscape'?'landscape':'portrait';
  const logo=brand.showLogo&&safePhoto(brand.logoUrl);
- const props='--mg-width:'+format.w+'px;--mg-height:'+format.h+'px;--mg-bg:'+bg+';--mg-ink:'+ink+';--mg-accent:'+accent+';--mg-card:'+(palette.dark?'#3a322f':'#fffefc')+';--mg-sub:'+(palette.dark?'#ead4bc':'#67574e')+';--mg-line:'+accent+';';
+ const font=({fraunces:'Fraunces, Georgia, serif','dm-sans':'DM Sans, Arial, sans-serif',serif:'Georgia, serif',system:'Arial, sans-serif'})[brand.font]||'Fraunces, Georgia, serif';
+ const props='--mg-display-font:'+font+';--mg-width:'+format.w+'px;--mg-height:'+format.h+'px;--mg-bg:'+bg+';--mg-ink:'+ink+';--mg-accent:'+accent+';--mg-card:'+(palette.dark?'#3a322f':'#fffefc')+';--mg-sub:'+(palette.dark?'#ead4bc':'#67574e')+';--mg-line:'+accent+';';
  let header='<header class="mg-source-header"><div class="mg-source-brand">'+(logo?'<img class="mg-brand-logo" src="'+escape(logo)+'" alt="'+escape(name)+'">':'<span class="mg-brand-name" data-cs-edit="brand.name">'+escape(name)+'</span>')+'<small data-cs-edit="brand.tagline">'+escape(tagline)+'</small></div><span class="mg-source-headnote">'+escape(doc.name.replace(/menu|poster|block|board|grid/gi,'').trim()||'YOUR MENU')+'</span></header>';
  let content='<div class="mg-source-items">'+items.map((p,i)=>article(p,state,opts,i,meta)).join('')+'</div>';
  return '<section class="mg-export-page mg-source-page mg-source-'+meta.kind+' mg-source-format-'+outFormat+'" style="'+props+'" data-page="'+(index+1)+'" data-count="'+items.length+'" data-original-source="'+escape(doc.id)+'">'+
