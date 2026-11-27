@@ -21,11 +21,15 @@ const SOURCE={
 'caresdev':{label:'Caresdev Restaurant Menu (MIT)',url:'https://github.com/caresdev/restaurant-menu'},
 'themefisher':{label:'Themefisher Restaurant Bootstrap (MIT code)',url:'https://github.com/themefisher/restaurant-bootstrap'},
 'colorlib':{label:'Colorlib Tavola (MIT code)',url:'https://github.com/ColorlibHQ/bootstrap-templates/tree/main/tavola'},
-'opentempl':{label:'OpenTempl native menu designs (MIT)',url:'https://github.com/noah-thing/opentempl'}
+'opentempl':{label:'OpenTempl native menu designs (MIT)',url:'https://github.com/noah-thing/opentempl'},
+'canvix':{label:'Canvix original café menus (MIT)',url:'https://github.com/mir-ashiq/canvix'}
 };
 const PACK=Array.isArray(root.SeiyunOpenMenuPack)?root.SeiyunOpenMenuPack:[];
+const CANVIX_PACK=Array.isArray(root.SeiyunCanvixMenuPack)?root.SeiyunCanvixMenuPack:[];
+const SOURCE_PACK=[...PACK,...CANVIX_PACK];
 const IMPORTED=PACK.map(t=>Object.freeze({id:'opentempl:'+t.id,title:t.name,layout:'native',tone:'source',source:'opentempl',sourceId:t.id,recommendedFormat:root.SeiyunOpenMenuAdapter?.inferredFormat(t)||'a4',vibe:t.vibe||'Menu'}));
-const REGISTRY=Object.freeze([...FAMILY.flatMap(f=>LOOK.map(l=>Object.freeze({id:f.id+'-'+l.id,title:f.name+' · '+l.name,layout:f.id,tone:l.id,source:f.source}))),...IMPORTED]);
+const CANVIX=CANVIX_PACK.map(t=>Object.freeze({id:'canvix:'+t.id,title:t.name,layout:'native',tone:'source',source:'canvix',sourceId:t.id,recommendedFormat:root.SeiyunOpenMenuAdapter?.inferredFormat(t)||'a4',vibe:'Café menu'}));
+const REGISTRY=Object.freeze([...FAMILY.flatMap(f=>LOOK.map(l=>Object.freeze({id:f.id+'-'+l.id,title:f.name+' · '+l.name,layout:f.id,tone:l.id,source:f.source}))),...IMPORTED,...CANVIX]);
 const FORMATS=Object.freeze({
 letter:{label:'US Letter · portrait',w:816,h:1056,print:'letter'},
 a4:{label:'A4 · portrait',w:794,h:1123,print:'A4'},
@@ -103,8 +107,8 @@ return '<section class="mg-export-page mg-layout-'+family.id+' mg-tone-'+look.id
 }
 function renderPages(state,config){const opts={...getSettings(state),...(config||{})};opts.imageSpace=clamp(opts.imageSpace,25,70);if(!FORMATS[opts.format])opts.format='letter';if(!REGISTRY.find(t=>t.id===opts.templateId))opts.templateId=DEFAULT.templateId;
 const currentTemplate=REGISTRY.find(t=>t.id===opts.templateId);
-if(currentTemplate?.source==='opentempl'){
- const doc=PACK.find(t=>t.id===currentTemplate.sourceId);
+if(['opentempl','canvix'].includes(currentTemplate?.source)){
+ const doc=SOURCE_PACK.find(t=>t.id===currentTemplate.sourceId&&(!t.source||t.source===currentTemplate.source));
  if(!doc||!root.SeiyunOpenMenuAdapter)throw Error('Imported design renderer is unavailable');
  const r=root.SeiyunOpenMenuAdapter.render(state,doc,{format:opts.format,layoutOverrides:opts.layoutOverrides?.[opts.templateId]||{}});
  return {...r,options:{...opts,format:r.options.format},capacity:r.pageCount};
