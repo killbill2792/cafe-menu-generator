@@ -69,3 +69,16 @@ test('brand logos are optional: imported document uses text or user-provided log
  const logo=adapter.render(state,t).pages.join('');
  assert(logo.includes('src="https://owner.example.org/logo.png"'));
 });
+
+test('imported native menu pages use actual items even when source has a decorative front cover',()=>{
+ const noodle=pack.find(x=>x.id==='food-menu-noodle-bar');
+ const r=adapter.render(create(26),noodle,{format:'a4'});
+ assert(r.pages[0].includes('data-menu-product='),'the first selected preview is already a usable menu, not a blank cover');
+});
+test('bakery, wine and weekly lunch templates expose real product slots, not empty graphic pages',()=>{
+ for(const [id,expected] of [['pop-menu-bun',10],['hand-winelist-menu',12],['food-menu-lunch-week',5]]){
+  const d=pack.find(x=>x.id===id);
+  const count=d.pages.reduce((n,p)=>n+adapter.slotPlan(p,d).length,0);
+  assert(count>=expected,id+' maps '+count+' items, expected at least '+expected);
+ }
+});
