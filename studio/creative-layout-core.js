@@ -11,8 +11,8 @@ function keySafe(k){return typeof k==='string'&&k!=='__proto__'&&k!=='prototype'
 function templateSafe(k){return typeof k==='string'&&k.length<160&&/^[a-z0-9:_-]+$/i.test(k)&&!['__proto__','prototype','constructor'].includes(k);}
 function cleanRect(rect={},bounds={}){
  const w=clamp(bounds.width,250,4000,816),h=clamp(bounds.height,250,4000,1056);
- return {x:clamp(rect.x,0,w,0),y:clamp(rect.y,0,h,0),
-  w:clamp(rect.w,24,w,160),h:clamp(rect.h,20,h,60),
+ const x=clamp(rect.x,0,w-24,0),y=clamp(rect.y,0,h-20,0);
+ return {x,y,w:clamp(rect.w,24,w-x,160),h:clamp(rect.h,20,h-y,60),
   fontSize:clamp(rect.fontSize,8,180,24)};
 }
 function saveMenuLayout(state,templateId,key,rect={},bounds={}){
