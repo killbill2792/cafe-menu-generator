@@ -1,0 +1,42 @@
+// OpenTempl service worker: keeps the editor, the library and the fonts it has
+// used available offline. Same origin files are served cache first and
+// refreshed in the background; Google Fonts are cached as they are fetched.
+const CACHE = 'tavla-v1'; // legacy name kept on purpose, renaming it would drop users' offline cache
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html'])).then(() => self.skipWaiting()));
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.pathname.startsWith('/api/')) return;
+  const sameOrigin = url.origin === self.location.origin;
+  const fonts = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
+  if (!sameOrigin && !fonts) return;
+  e.respondWith(
+    caches.open(CACHE).then(async (cache) => {
+      let hit = await cache.match(req, { ignoreSearch: req.mode === 'navigate' });
+      // A stylesheet loaded by <link> is cached opaque. Handing that to fetch() (which exports
+      // use to embed fonts) fails, so CORS requests skip it and replace it with a readable copy.
+      if (hit && hit.type === 'opaque' && req.mode === 'cors') hit = undefined;
+      const fresh = fetch(req)
+        .then((res) => {
+          if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
+          return res;
+        })
+        .catch(() => hit);
+      return hit || fresh;
+    }),
+  );
+});
