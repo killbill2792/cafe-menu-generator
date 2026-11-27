@@ -41,7 +41,7 @@ function resolve(p,brand={},opts={}){
  const matched=cues.filter(x=>x.keys.some(k=>description.includes(k))),major=matched[0]||cues[8];
  const scene=registry.find(x=>x.id===opts.sceneId)||registry.find(x=>x.id===major.scene)||registry[0];
  return {id:scene.id,name:scene.name,description:scene.description,
- palette:{background:hex(opts.background,major.background),accent:hex(opts.accent,major.accent)},
+ palette:{background:hex(opts.background==='#2e1815'?undefined:opts.background,major.background),accent:hex(opts.accent,major.accent)},
  ingredients:matched.slice(0,3).map(x=>({label:x.name,accent:x.accent})),
  duration:clamp(opts.duration,3,15,7),speed:clamp(opts.speed,.3,2.5,1),
  layers:{hero:normalizeLayer(opts.layerOverrides?.hero,{x:50,y:46,scale:1,fontSize:64}),
