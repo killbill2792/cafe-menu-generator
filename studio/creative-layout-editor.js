@@ -2,6 +2,7 @@
 (function(root,make){const api=make();root.SeiyunLayoutEditor=api;})(typeof window!=='undefined'?window:globalThis,function(){
 'use strict';
 let active=null,moveable=null,handler=null;
+const diagnostics={selects:0,dragStarts:0,drags:0,dragEnds:0,lastKey:'',lastDist:[]};
 const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
 const number=(v,d)=>Number.isFinite(Number(v))?Number(v):d;
 const layoutCore=()=>window.SeiyunLayoutCore;
@@ -36,7 +37,7 @@ function select(el){
  const a=active;
  if(a.target===el)return;
  if(a.target)a.target.classList.remove('cs-element-selected');
- a.target=el;el.classList.add('cs-element-selected');
+ a.target=el;el.classList.add('cs-element-selected');diagnostics.selects++;diagnostics.lastKey=el.dataset.layoutKey||el.dataset.sceneLayer||'';
  if(moveable){moveable.destroy();moveable=null;}
  if(typeof window.Moveable!=='function'){
   const s=document.querySelector('#csMessage');if(s)s.textContent='Drag handles are temporarily unavailable. Check the editing library connection.';
@@ -75,8 +76,9 @@ function select(el){
  moveable=new window.Moveable(document.body,{target:el,draggable:true,resizable:true,scalable:false,rotatable:false,origin:false,edge:true,keepRatio:false,
    snappable:true,snapThreshold:8,bounds:{left:0,top:0,right:window.innerWidth,bottom:window.innerHeight},
    renderDirections:['nw','ne','sw','se'],className:'cs-moveable-handles'});
- moveable.on('dragStart',()=>{startBox=nativeBox(el);startLayer=readLayer();dirty=false;});
+ moveable.on('dragStart',()=>{diagnostics.dragStarts++;startBox=nativeBox(el);startLayer=readLayer();dirty=false;});
  moveable.on('drag',e=>{
+  diagnostics.drags++;diagnostics.lastDist=e.beforeDist||e.dist||[];
   const dx=number(e.beforeDist?.[0],number(e.dist?.[0],0)),dy=number(e.beforeDist?.[1],number(e.dist?.[1],0));
   if(a.mode==='showcase'){
    if(!['hero','title'].includes(key))return;
@@ -90,7 +92,7 @@ function select(el){
   }
   moveable?.updateRect();
  });
- moveable.on('dragEnd',commit);
+ moveable.on('dragEnd',()=>{diagnostics.dragEnds++;commit();});
  moveable.on('resizeStart',()=>{startBox=nativeBox(el);startLayer=readLayer();dirty=false;});
  moveable.on('resize',e=>{
   const factor=number(e.width,startBox.w)/Math.max(1,startBox.w);
@@ -110,5 +112,5 @@ function select(el){
  moveable.on('resizeEnd',commit);
  return moveable;
 }
-return {attach,detach,select};
+return {attach,detach,select,diagnostics};
 });
