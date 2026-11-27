@@ -55,3 +55,7 @@ GitHub Action `.github/workflows/artwork-redesign-tests.yml` runs Node source-bi
 ## Project continuity
 
 Read `agent.md` and source provenance in `studio/MENU_GALLERY_SOURCES.md` before editing. The older documents about mandatory TV screens, publishing and 30-second refresh describe a legacy feature and must not be used to redefine the current export-first product.
+
+### Photo isolation visual check
+
+The product preview now attempts a local, non-destructive cutout of near-white, edge-connected backgrounds (the common white rectangles around cup photographs) before showing or exporting artwork. Toggle **Automatically isolate drinks photographed on plain white backgrounds** off when a bright product or deliberate white design is mistakenly affected. The original Storage photo is not changed. A manual **Remove plain white background** action can still save a separate transparent version. CORS restrictions may prevent the local mask; the original photo then remains visible and downloads must still be checked. This is not a paid AI service or a full segmentation model for arbitrary complex scenery.
