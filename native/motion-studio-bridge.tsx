@@ -35,6 +35,14 @@ export default function SeiyunNativeBridge() {
          // A product asset comes ONLY from the owner's explicit photo selection.
          // Never fetch the prior UI screenshot or substitute sample assets.
          scene.addAssets([{url,name:String(p.name||'Selected drink').slice(0,95),kind:'image'}]);
+         // A brand-new upstream project intentionally has ZERO layers.
+         // A photo in the media library does not appear until we create a real
+         // native motion track. Start on an actual one-hero Spotlight preset.
+         if(useSceneStore.getState().tracks.length===0){
+           useSceneStore.getState().addTrack('stories-01');
+           useSceneStore.getState().setActiveTemplate('stories-01');
+           useSceneStore.getState().setValue('count',1);
+         }
          if(c.brand?.accent&&/^#[0-9a-f]{6}$/i.test(c.brand.accent))
            scene.setBackground({color:c.brand.accent,source:'color',userSet:true});
          scene.setPlaying(true);
