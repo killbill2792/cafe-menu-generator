@@ -1,0 +1,41 @@
+/* Cinematic advertising scene: exactly one hero product, animated environment, five distinct treatments. */
+.cs-ad-stage .cs-cinematic-scene{position:absolute;inset:0;isolation:isolate;overflow:hidden;background:var(--cs-scene-bg,#33221d);color:#fff6e9}
+.cs-cinematic-background{position:absolute;inset:-22%;background:radial-gradient(ellipse at 50% 43%,color-mix(in srgb,var(--cs-scene-accent) 58%,transparent),transparent 48%),linear-gradient(145deg,transparent 20%,#0003 90%);animation:cs-scene-drift 11s ease-in-out infinite alternate}
+.cs-cinematic-beam{position:absolute;inset:-30% -15%;background:linear-gradient(112deg,transparent 35%,color-mix(in srgb,var(--cs-scene-accent) 33%,transparent) 50%,transparent 65%);transform:translateX(-55%) rotate(-14deg);filter:blur(15px);animation:cs-beam-sweep 8s ease-in-out infinite}
+.cs-cinematic-ring{position:absolute;left:50%;top:44%;width:83%;aspect-ratio:1;border:1px solid color-mix(in srgb,var(--cs-scene-accent) 39%,transparent);border-radius:50%;transform:translate(-50%,-50%) rotate(-10deg);box-shadow:0 0 80px color-mix(in srgb,var(--cs-scene-accent) 15%,transparent),inset 0 0 22px color-mix(in srgb,var(--cs-scene-accent) 16%,transparent);animation:cs-ring-breathe 9s ease-in-out infinite}
+.cs-cinematic-ring:after{content:"";position:absolute;inset:8%;border:1px solid color-mix(in srgb,var(--cs-scene-accent) 27%,transparent);border-radius:50%}
+.cs-cinematic-particles{position:absolute;inset:0;pointer-events:none}
+.cs-cinematic-particles i{position:absolute;left:calc(4% + var(--j)*5.9%);top:calc(8% + var(--j)*5.4%);width:calc(2px + var(--j)*.2px);height:calc(2px + var(--j)*.2px);border-radius:50%;background:var(--cs-scene-accent);box-shadow:0 0 14px 3px color-mix(in srgb,var(--cs-scene-accent) 25%,transparent);opacity:.4;animation:cs-spark-float calc(3s + var(--j)*.37s) ease-in-out infinite alternate;animation-delay:calc(var(--j)*-.25s)}
+.cs-scene-ingredients{position:absolute;inset:0;pointer-events:none;z-index:2}
+.cs-scene-ingredient{position:absolute;padding:7px 15px;border:1px solid color-mix(in srgb,var(--cs-scene-accent) 55%,transparent);border-radius:99px;background:#0003;backdrop-filter:blur(6px);text-transform:uppercase;letter-spacing:.16em;font:700 9px 'DM Sans',Arial,sans-serif;color:#ffe6c1;box-shadow:0 10px 35px #0003;animation:cs-ingredient-wander 7s ease-in-out infinite alternate}
+.cs-ing-0{top:23%;left:6%}.cs-ing-1{top:36%;right:5%;animation-delay:-3s}.cs-ing-2{top:61%;left:8%;animation-delay:-5s}
+.cs-hero-product{position:absolute;left:var(--cs-layer-x,50%);top:var(--cs-layer-y,46%);width:78%;height:57%;z-index:3;transform:translate(-50%,-50%) scale(var(--cs-layer-scale,1));transform-origin:center;animation:cs-hero-entrance 1.4s cubic-bezier(.2,.8,.2,1) both;cursor:move;touch-action:none}
+.cs-hero-img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 26px 24px #0007);animation:cs-drink-float 5.5s ease-in-out 1.5s infinite alternate}
+.cs-no-hero{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#fff9;border:1px dashed #fff6}
+.cs-cinematic-brand{position:absolute;z-index:4;top:5.5%;left:7%;right:7%;text-align:center;font:700 clamp(20px,3vw,33px) 'Fraunces',Georgia,serif;color:#fff7e8;text-shadow:0 5px 25px #0005}
+.cs-cinematic-copy{position:absolute;z-index:5;left:var(--cs-layer-x,50%);top:var(--cs-layer-y,83%);width:89%;transform:translate(-50%,-50%) scale(var(--cs-title-scale,1));transform-origin:center;text-align:center;cursor:move;touch-action:none;color:#fff5e8;text-shadow:0 3px 18px #0009}
+.cs-cinematic-copy small{font:700 clamp(8px,1.4vw,12px) Arial,sans-serif;letter-spacing:.27em;color:var(--cs-scene-accent)}
+.cs-cinematic-copy h2{font:800 var(--cs-title-size,53px)/1.06 'Fraunces',Georgia,serif;letter-spacing:-.05em;overflow-wrap:anywhere;margin:7px 0 6px}
+.cs-cinematic-copy p{margin:0 auto 9px;max-width:80%;font:500 12px/1.35 'DM Sans',Arial,sans-serif;opacity:.92}
+.cs-cinematic-copy strong{font:850 24px 'DM Sans',Arial,sans-serif}
+.cs-cinematic-scene[data-scene="ingredient-motion"] .cs-cinematic-background{background:radial-gradient(ellipse at 50% 45%,#efac6670,transparent 52%),radial-gradient(ellipse at 20% 90%,#e76f3248,transparent 50%),radial-gradient(ellipse at 87% 14%,#f6cf8870,transparent 42%);animation-duration:8s}
+.cs-cinematic-scene[data-scene="ingredient-motion"] .cs-cinematic-ring{border-style:dashed;animation:cs-ring-spin 24s linear infinite}
+.cs-cinematic-scene[data-scene="product-spotlight"]{color:#3c271c;background:linear-gradient(135deg,#e9d8bc,#9f765c 82%)!important}
+.cs-cinematic-scene[data-scene="product-spotlight"] .cs-cinematic-background{background:radial-gradient(ellipse at 42% 45%,#fff7d9b3,transparent 55%),linear-gradient(135deg,#fff7d833,transparent);animation-duration:13s}
+.cs-cinematic-scene[data-scene="product-spotlight"] .cs-cinematic-beam{background:linear-gradient(106deg,transparent 35%,#fff8e4ba 50%,transparent 65%)}
+.cs-cinematic-scene[data-scene="product-spotlight"] .cs-cinematic-brand,.cs-cinematic-scene[data-scene="product-spotlight"] .cs-cinematic-copy{color:#3a261e;text-shadow:0 3px 12px #fff8}
+.cs-cinematic-scene[data-scene="product-spotlight"] .cs-cinematic-copy small{color:#79502d}
+.cs-cinematic-scene[data-scene="fresh-energy"] .cs-cinematic-background{background:radial-gradient(circle at 70% 20%,#a4e66ca1,transparent 38%),radial-gradient(ellipse at 10% 72%,#75d3c38c,transparent 50%),radial-gradient(ellipse at 90% 75%,#e5b7ff65,transparent 54%);animation:cs-scene-drift 6s ease-in-out infinite alternate}
+.cs-cinematic-scene[data-scene="fresh-energy"] .cs-cinematic-ring{border:2px solid #e6f5ce7a;border-radius:46% 54% 65% 35%;animation:cs-ring-spin 11s ease-in-out infinite}
+.cs-cinematic-scene[data-scene="warm-cafe"] .cs-cinematic-background{background:radial-gradient(ellipse at 50% 40%,#ffd59e66,transparent 48%),radial-gradient(ellipse at 12% 72%,#a86b4250,transparent 52%),radial-gradient(ellipse at 85% 80%,#bb714744,transparent 50%)}
+.cs-cinematic-scene[data-scene="warm-cafe"] .cs-cinematic-particles i{width:6px;height:6px;filter:blur(2px);opacity:.24}
+@keyframes cs-scene-drift{from{transform:translate(-5%,-4%) rotate(-5deg) scale(1)}to{transform:translate(4%,5%) rotate(6deg) scale(1.13)}}
+@keyframes cs-beam-sweep{0%,12%{transform:translateX(-65%) rotate(-12deg)}55%,80%{transform:translateX(65%) rotate(-12deg)}100%{transform:translateX(-65%) rotate(-12deg)}}
+@keyframes cs-ring-breathe{0%,100%{opacity:.47;transform:translate(-50%,-50%) scale(.95)}50%{opacity:.8;transform:translate(-50%,-50%) scale(1.05)}}
+@keyframes cs-ring-spin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes cs-spark-float{from{transform:translate3d(0,7px,0);opacity:.2}to{transform:translate3d(10px,-14px,0);opacity:.75}}
+@keyframes cs-ingredient-wander{from{transform:translate(0,0) rotate(-8deg)}to{transform:translate(12px,-20px) rotate(5deg)}}
+@keyframes cs-hero-entrance{from{opacity:0;transform:translate(-50%,-35%) scale(.8)}to{opacity:1;transform:translate(-50%,-50%) scale(var(--cs-layer-scale,1))}}
+@keyframes cs-drink-float{from{transform:translateY(-1.2%) scale(1)}to{transform:translateY(1.2%) scale(1.018)}}
+@media(prefers-reduced-motion:reduce){.cs-cinematic-scene *{animation-duration:.001s!important;animation-iteration-count:1!important}}
+@media(max-width:600px){.cs-cinematic-copy h2{font-size:clamp(23px,6.5vw,36px)}.cs-cinematic-copy p{font-size:10px}.cs-hero-product{width:82%;height:54%}.cs-cinematic-brand{font-size:23px}}
