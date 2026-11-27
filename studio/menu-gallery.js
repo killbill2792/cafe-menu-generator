@@ -20,9 +20,10 @@ const SOURCE={
 'menu-pages':{label:'Restaurant Menu Pages (MIT-described)',url:'https://github.com/aymalkhalid/restaurant-menu-pages'},
 'caresdev':{label:'Caresdev Restaurant Menu (MIT)',url:'https://github.com/caresdev/restaurant-menu'},
 'themefisher':{label:'Themefisher Restaurant Bootstrap (MIT code)',url:'https://github.com/themefisher/restaurant-bootstrap'},
-'colorlib':{label:'Colorlib Tavola (MIT code)',url:'https://github.com/ColorlibHQ/bootstrap-templates/tree/main/tavola'}
+'colorlib':{label:'Colorlib Tavola (MIT code)',url:'https://github.com/ColorlibHQ/bootstrap-templates/tree/main/tavola'},
+'opentempl':{label:'OpenTempl (MIT original Menu documents)',url:'https://github.com/noah-thing/opentempl'}
 };
-const REGISTRY=Object.freeze(FAMILY.flatMap(f=>LOOK.map(l=>Object.freeze({id:f.id+'-'+l.id,title:f.name+' · '+l.name,layout:f.id,tone:l.id,source:f.source}))));
+const REGISTRY=Object.freeze([...FAMILY.flatMap(f=>LOOK.map(l=>Object.freeze({id:f.id+'-'+l.id,title:f.name+' · '+l.name,layout:f.id,tone:l.id,source:f.source,kind:'seiyun-composition'}))),...(root.SeiyunSourceMenus?.registry||[])]);
 const FORMATS=Object.freeze({
 letter:{label:'US Letter · portrait',w:816,h:1056,print:'letter'},
 a4:{label:'A4 · portrait',w:794,h:1123,print:'A4'},
@@ -30,7 +31,7 @@ portrait:{label:'Digital portrait · 1080×1920',w:1080,h:1920,print:'1080px 192
 landscape:{label:'Digital landscape · 1920×1080',w:1920,h:1080,print:'1920px 1080px'},
 square:{label:'Square · 1080×1080',w:1080,h:1080,print:'1080px 1080px'}
 });
-const DEFAULT=Object.freeze({templateId:'photo-left-warm',format:'letter',imageSpace:43,photoSizeByProduct:{}});
+const DEFAULT=Object.freeze({templateId:'photo-left-warm',format:'letter',imageSpace:43,density:'balanced',photoSizeByProduct:{}});
 function clamp(n,lo,hi){n=Number(n);return Number.isFinite(n)?Math.min(hi,Math.max(lo,n)):lo;}
 function esc(v){return String(v===null||v===undefined?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function safePhoto(url){if(!url||!String(url).trim())return '';try{const u=new URL(String(url));if(u.protocol==='https:'||u.protocol==='http:'||u.protocol==='blob:'||u.protocol==='data:'&&u.href.startsWith('data:image/'))return u.href;}catch(e){}return '';}
@@ -38,6 +39,8 @@ function getSettings(state){const x=state?.menuArtwork||{};return {
 templateId:REGISTRY.find(t=>t.id===x.templateId)?.id||DEFAULT.templateId,
 format:FORMATS[x.format]?x.format:DEFAULT.format,
 imageSpace:clamp(x.imageSpace===undefined?DEFAULT.imageSpace:x.imageSpace,25,70),
+density:['compact','balanced','spacious'].includes(x.density)?x.density:'balanced',
+layoutOverridesByTemplate:typeof x.layoutOverridesByTemplate==='object'&&x.layoutOverridesByTemplate!==null?x.layoutOverridesByTemplate:{},
 photoSizeByProduct:typeof x.photoSizeByProduct==='object'&&x.photoSizeByProduct!==null&&!Array.isArray(x.photoSizeByProduct)?x.photoSizeByProduct:{},
 photoTransformByProduct:typeof x.photoTransformByProduct==='object'&&x.photoTransformByProduct!==null&&!Array.isArray(x.photoTransformByProduct)?x.photoTransformByProduct:{}
 };}
@@ -48,7 +51,7 @@ photo:safePhoto((Array.isArray(p.photos)?p.photos:[])[Number(p.primary)||0]||(Ar
 }));}
 function currency(v,state){const n=Number(v);const symbol={USD:'$',CAD:'CA$',EUR:'€',GBP:'£',AED:'AED ',SAR:'SAR ',INR:'₹',JPY:'¥'}[state?.currency]||'$';return Number.isFinite(n)?symbol+n.toFixed(state?.currency==='JPY'?0:2):'Price TBD';}
 function prices(p,state){if(!p.sizes.length)return '<span class="mg-no-price">Price to add</span>';return p.sizes.map((s,i)=>'<span>'+esc(s.name)+' <b data-cs-edit="price" data-cs-price-index="'+i+'">'+esc(currency(s.price,state))+'</b></span>').join('');}
-function capacityFor(state,config){const t=REGISTRY.find(t=>t.id===config.templateId)||REGISTRY[0];const f=FAMILY.find(f=>f.id===t.layout);const fmt=FORMATS[config.format]||FORMATS.letter;const aspect=fmt.h/fmt.w;let factor=aspect<.8?.73:aspect<1.15?.87:aspect>1.6?1.35:1;const maxSpace=Math.max(clamp(config.imageSpace,25,70),...Object.values(config.photoSizeByProduct||{}).map(x=>clamp(x,25,70)));const photoFactor=1+(43-maxSpace)/60;return Math.min(25,Math.max(2,Math.floor(f.capacity*factor*photoFactor)));}
+function capacityFor(state,config){const t=REGISTRY.find(t=>t.id===config.templateId)||REGISTRY[0];if(t.kind==='source-menu')return root.SeiyunSourceMenus.capacity(t.id,config.format,config.density);const f=FAMILY.find(f=>f.id===t.layout);const fmt=FORMATS[config.format]||FORMATS.letter;const aspect=fmt.h/fmt.w;let factor=aspect<.8?.73:aspect<1.15?.87:aspect>1.6?1.35:1;const maxSpace=Math.max(clamp(config.imageSpace,25,70),...Object.values(config.photoSizeByProduct||{}).map(x=>clamp(x,25,70)));const photoFactor=1+(43-maxSpace)/60;const densityFactor=config.density==='compact'?1.25:config.density==='spacious'?.80:1;return Math.min(25,Math.max(2,Math.floor(f.capacity*factor*photoFactor*densityFactor)));}
 function paginate(items,perPage){const pages=[];for(let i=0;i<items.length;i+=perPage)pages.push(items.slice(i,i+perPage));return pages.length?pages:[[]];}
 function thumb(p,space,opts={}){const n=clamp(space,25,70),tr=opts.photoTransformByProduct?.[p.id]||{},zoom=clamp(tr.zoom||100,100,240),x=clamp(tr.x||0,-60,60),y=clamp(tr.y||0,-60,60);
 return '<div class="mg-item-photo" data-cs-photo="'+esc(p.id)+'" style="--mg-photo-space:'+n+'%">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="eager" crossorigin="anonymous" style="transform:translate('+x+'%, '+y+'%) scale('+(zoom/100)+');transform-origin:center">':'<span class="mg-photo-empty">PHOTO TO ADD</span>')+'</div>';}
@@ -68,11 +71,11 @@ return '<section class="mg-export-page mg-layout-'+family.id+' mg-tone-'+look.id
 '<footer class="mg-page-footer"><span>'+esc(t.title)+'</span><span>Page '+(index+1)+' of '+count+'</span></footer></section>';
 }
 function renderPages(state,config){const opts={...getSettings(state),...(config||{})};opts.imageSpace=clamp(opts.imageSpace,25,70);if(!FORMATS[opts.format])opts.format='letter';if(!REGISTRY.find(t=>t.id===opts.templateId))opts.templateId=DEFAULT.templateId;
-const items=productsOf(state),capacity=capacityFor(state,opts),groups=paginate(items,capacity);
+const items=productsOf(state),selected=REGISTRY.find(t=>t.id===opts.templateId);if(selected?.kind==='source-menu')return root.SeiyunSourceMenus.renderPages(state,opts,items,FORMATS);const capacity=capacityFor(state,opts),groups=paginate(items,capacity);
 return {pageCount:groups.length,productCount:items.length,capacity,pages:groups.map((g,i)=>pageHTML(state,opts,g,i,groups.length)),options:opts};}
 function getDraft(){return typeof draft!=='undefined'?draft:null;}
 function ensureDraftConfig(){const state=getDraft();if(!state)return {...DEFAULT,photoSizeByProduct:{}};state.menuArtwork={...getSettings(state)};return state.menuArtwork;}
-function galleryCard(t,settings){const l=LOOK.find(x=>x.id===t.tone),f=FAMILY.find(x=>x.id===t.layout);
+function galleryCard(t,settings){if(t.kind==='source-menu'){const art=renderPages(getDraft()||{}, {...settings,templateId:t.id});return '<button class="mg-template-card" data-menu-template="'+esc(t.id)+'"><span class="mg-template-thumb mg-source-thumb">'+art.pages[0].replace(/loading="eager"/g,'loading="lazy"')+'</span><span class="mg-template-name">'+esc(t.title)+'</span><span class="mg-template-meta">Original MIT OpenTempl design</span></button>';}const l=LOOK.find(x=>x.id===t.tone),f=FAMILY.find(x=>x.id===t.layout);
 const sample=productsOf(getDraft()||{}).slice(0,3),sampleP=sample.find(x=>x.photo)||sample[0],miniPhoto=sampleP?.photo?'<img src="'+esc(sampleP.photo)+'" alt="" loading="lazy">':'<span>☕</span>';
 return '<button type="button" class="mg-template-card '+(settings.templateId===t.id?'selected':'')+'" data-menu-template="'+esc(t.id)+'" aria-pressed="'+(settings.templateId===t.id)+'">'+
 '<span class="mg-template-thumb mg-mini-'+esc(f.id)+'" style="--mg-bg:'+l.bg+';--mg-card:'+l.card+';--mg-ink:'+l.text+';--mg-accent:'+l.accent+'">'+
