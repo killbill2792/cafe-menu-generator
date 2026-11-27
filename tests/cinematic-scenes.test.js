@@ -38,3 +38,14 @@ test('scene layer changes are persisted as safe output-only positions',()=>{
  assert.equal(scenes.normalizeLayer({x:9999,y:-10,scale:-4}).x,100);
  assert.equal(scenes.normalizeLayer({x:9999,y:-10,scale:-4}).y,0);
 });
+
+test('ingredient motion contains actual animated flavor graphics, not only renamed caption text',()=>{
+ const saffron=scenes.render(product('Saffron','saffron cream','Coffee'),{name:'Seiyun'},{sceneId:'ingredient-motion'});
+ const matcha=scenes.render(product('Matcha','matcha powder','Matcha'),{name:'Seiyun'},{sceneId:'ingredient-motion'});
+ assert(saffron.includes('data-environment-layer="flavor-particles"'));
+ assert(matcha.includes('data-environment-layer="flavor-particles"'));
+ assert(saffron.includes('cs-flavor-saffron'));
+ assert(matcha.includes('cs-flavor-matcha'));
+ assert((saffron.match(/class="cs-flavor-particle"/g)||[]).length>=10);
+ assert((matcha.match(/class="cs-flavor-particle"/g)||[]).length>=10);
+});
