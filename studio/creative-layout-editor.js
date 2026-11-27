@@ -56,7 +56,9 @@ function select(el){
   const val=layoutCore().saveShowcaseLayer(a.state,key,{...old,...patch});
   if(val){el.style.setProperty('--cs-layer-x',val.x+'%');el.style.setProperty('--cs-layer-y',val.y+'%');
    el.style.setProperty(key==='hero'?'--cs-layer-scale':'--cs-title-scale',val.scale);
-   if(key==='title')el.style.setProperty('--cs-title-size',val.fontSize+'px');}
+   if(key==='title')el.style.setProperty('--cs-title-size',val.fontSize+'px');
+   window.SeiyunShowcase?.update?.(a.state,window.SeiyunCreativeCore?.normalizeShowcase(a.state.showcaseArtwork||{},a.state),window.SeiyunCreativeCore);
+  }
   return val;
  }
  function saveMenu(box){
