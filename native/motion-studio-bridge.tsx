@@ -46,7 +46,7 @@ export default function SeiyunNativeBridge() {
          if(c.brand?.accent&&/^#[0-9a-f]{6}$/i.test(c.brand.accent))
            scene.setBackground({color:c.brand.accent,source:'color',userSet:true});
          scene.setPlaying(true);
-         send('SEIYUN_NATIVE_LOADED',{presets:'full-upstream-motion-library'});
+         send('SEIYUN_NATIVE_LOADED',{presets:'full-upstream-motion-library',layers:useSceneStore.getState().tracks.length,assets:useSceneStore.getState().assets.length,templateId:useSceneStore.getState().activeTemplateId});
          // Persist a serializable scene, not the native editor's functions or original photo blobs.
          let last='',timer:ReturnType<typeof setTimeout>|undefined;
          unsubscribe=useSceneStore.subscribe(s=>{
