@@ -7,7 +7,7 @@ function toArtboardDelta(clientDelta,nativeSize,displayedSize){
  if(!Number.isFinite(d)||!Number.isFinite(a)||!Number.isFinite(b)||b<=0)return 0;
  return d*a/b;
 }
-function keySafe(k){return typeof k==='string'&&k!=='__proto__'&&k!=='prototype'&&k!=='constructor'&&/^(brand|product:[A-Za-z0-9_\-]{1,100}|source:[0-9]{1,6})$/.test(k);}
+function keySafe(k){return typeof k==='string'&&k!=='__proto__'&&k!=='prototype'&&k!=='constructor'&&/^(brand|product:[A-Za-z0-9_\-]{1,100}(?::(?:name|ingredients|price))?|source:[0-9]{1,6})$/.test(k);}
 function templateSafe(k){return typeof k==='string'&&k.length<160&&/^[a-z0-9:_-]+$/i.test(k)&&!['__proto__','prototype','constructor'].includes(k);}
 function cleanRect(rect={},bounds={}){
  const w=clamp(bounds.width,250,4000,816),h=clamp(bounds.height,250,4000,1056);
