@@ -9,7 +9,7 @@ import type { DesignDoc } from '../doc/design';
 
 type OwnerProduct = { id:string; name?:string; category?:string; ingredients?:string; enabled?:boolean; photos?:string[]; primary?:number; sizes?:{name?:string;price?:number}[] };
 type OwnerPayload = {
-  brand?:{name?:string;tagline?:string;accent?:string;background?:string;text?:string};
+  brand?:{name?:string;tagline?:string;accent?:string;background?:string;text?:string;customColors?:boolean};
   currency?:string; products?:OwnerProduct[]; templateId?:string; selectedPhotoId?:string;
   saved?:{snapshot:DesignSnapshot};
 };
@@ -31,7 +31,7 @@ function safeOwner(input:unknown): OwnerPayload {
   const p=(input&&typeof input==='object'?input:{}) as OwnerPayload;
   return {
     brand:{name:text(p.brand?.name||'Your Café',75),tagline:text(p.brand?.tagline,95),
-      accent:palette(p.brand?.accent),background:palette(p.brand?.background),text:palette(p.brand?.text)},
+      accent:palette(p.brand?.accent),background:palette(p.brand?.background),text:palette(p.brand?.text),customColors:p.brand?.customColors===true},
     currency:text(p.currency||'USD',4),
     templateId:text(p.templateId||'food-menu-cafe-nord',90),
     products:(Array.isArray(p.products)?p.products:[]).slice(0,MAX_PRODUCTS).filter(x=>x&&typeof x==='object'&&x.enabled!==false).map(x=>({
@@ -85,19 +85,30 @@ function cleanDecorations(snapshot:DesignSnapshot,width:number,height:number):El
   if(!p)return[];
   return p.elementIds.map(v=>snapshot.elements[v]).filter((el):el is Element=>!!el)
     .filter(el=>['shape','line','svg'].includes(el.type))
-    .filter(el=>el.y+el.h<height*.15||el.y>height*.92)
-    .slice(0,22).map(el=>({...structuredClone(el),id:id(),locked:false}));
+    .slice(0,64).map(el=>({...structuredClone(el),id:id(),locked:false}));
 }
 function createPages(template:DesignSnapshot,owner:OwnerPayload,images:Map<string,string>):DesignSnapshot {
   const width=Math.max(600,Math.min(1920,template.meta.width||816)),
         height=Math.max(800,Math.min(2560,template.meta.height||1056));
   const font=(Object.values(template.elements).find(e=>e.type==='text')||{}) as TextElement;
   const ownerBrand=owner.brand||{},main=ownerBrand.name||'Your Café';
-  const tint=ownerBrand.accent||font.color||'#8b5534';
-  const ink=ownerBrand.text||font.color||'#2f251f';
+  const custom=ownerBrand.customColors===true;
+  const tint=(custom&&ownerBrand.accent)||font.color||'#8b5534';
+  const ink=(custom&&ownerBrand.text)||font.color||'#2f251f';
   const pg=template.pages[template.pageOrder[0]];
-  const fill:Fill=ownerBrand.background?{type:'solid',color:ownerBrand.background}:pg?.background?.type==='solid'?pg.background:{type:'solid',color:'#fbf2e7'};
-  const items=owner.products||[],perPage=8,count=Math.max(1,Math.ceil(items.length/perPage)),pages:Record<string,Page>={},elements:Record<string,Element>={},order:string[]=[];
+  const fill:Fill=(custom&&ownerBrand.background)?{type:'solid',color:ownerBrand.background}:pg?.background?.type==='solid'?pg.background:{type:'solid',color:'#fbf2e7'};
+  const items=owner.products||[];
+  const templateId=owner.templateId||'';
+  // Native source documents provide fundamentally different page structures.
+  // Keep product photos/text in predictable editable frames, no CSS grid reflow.
+  const variant=/special-story|special-of-the-day/i.test(templateId)?'poster':
+    /wine-list|receipt|weekly|lunch-week|cafe-nord/i.test(templateId)?'list':
+    /board-slide|digital|colour-cards/i.test(templateId)?'board':'cards';
+  const columns=variant==='list'||variant==='poster'?1:variant==='board'?3:2;
+  const rows=variant==='poster'?1:variant==='list'?6:variant==='board'?3:4;
+  const perPage=columns*rows;
+  const count=Math.max(1,Math.ceil(items.length/perPage));
+  const pages:Record<string,Page>={},elements:Record<string,Element>={},order:string[]=[];
   for(let p=0;p<count;p++){
     const pid=id(),ids:string[]=[];
     const add=(el:Element)=>{elements[el.id]=el;ids.push(el.id);};
@@ -105,11 +116,16 @@ function createPages(template:DesignSnapshot,owner:OwnerPayload,images:Map<strin
     add(textElement(font,'brand:name',main,width*.055,height*.035,width*.9,height*.065,width*.061,ink,800));
     add(textElement(font,'brand:tagline',ownerBrand.tagline||'FRESHLY PREPARED',width*.057,height*.105,width*.75,height*.032,width*.017,tint,700));
     add(textElement(font,'page:label','OUR MENU',width*.77,height*.103,width*.18,height*.03,width*.017,tint,700));
-    const bodyTop=height*.18,bodyHeight=height*.72,columns=2,rows=4,margin=width*.053,gutter=width*.025;
-    const cardW=(width-margin*2-gutter)/columns,cardH=bodyHeight/rows-height*.012;
+    const bodyTop=height*.18,bodyHeight=height*.72,margin=width*.053,gutter=width*.020;
+    const cardW=(width-margin*2-gutter*(columns-1))/columns,cardH=bodyHeight/rows-height*.012;
     for(let n=0;n<perPage;n++){
       const prod=items[p*perPage+n];if(!prod)continue;
-      const col=n%2,row=Math.floor(n/2),x=margin+col*(cardW+gutter),y=bodyTop+row*bodyHeight/4;
+      const col=n%columns,row=Math.floor(n/columns),x=margin+col*(cardW+gutter),y=bodyTop+row*bodyHeight/rows;
+      const isDark=fill.type==='solid'&&/^#(?:1[0-9a-f]{5}|2[0-9a-f]{5}|3[0-9a-f]{5})$/i.test(fill.color);
+      const surface=isDark?'#362b2b':'#fffdf7';
+      add({id:id(),type:'shape',name:'product:'+prod.id+':card',shape:'rect',x,y,w:cardW,h:cardH,
+       rotation:0,opacity:.9,locked:false,fill:{type:'solid',color:surface},
+       stroke:{color:tint,width:1,dash:'solid'},radius:12});
       // Each field is a separate upstream-native element. The source product is never deleted when the owner deletes its design layer.
       const imageId=images.get(prod.id);
       if(imageId)add(imageElement(prod.id,imageId,x+cardW*.025,y+cardH*.035,cardW*.355,cardH*.87));
@@ -124,6 +140,13 @@ function createPages(template:DesignSnapshot,owner:OwnerPayload,images:Map<strin
     order.push(pid);
   }
   return {meta:{...template.meta,id:id(),title:main+' • Menu',width,height,unit:'px',createdAt:Date.now(),updatedAt:Date.now()},pageOrder:order,pages,elements};
+}
+export async function createSeiyunOwnerDesign(templateId:string):Promise<string|null>{
+ const owner=ownerFromStorage();
+ if(!owner)return null;
+ // Choosing a different native template re-populates the entire catalog instead
+ // of opening the upstream example restaurant's stock text and photo.
+ return buildOwnerDesign({...owner,templateId,saved:undefined});
 }
 async function buildOwnerDesign(owner:OwnerPayload) {
   const templ=await findTemplate(owner.templateId||'food-menu-cafe-nord');
