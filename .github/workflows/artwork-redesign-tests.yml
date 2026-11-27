@@ -8,6 +8,8 @@ on:
       - 'studio/cinematic-scenes.*'
       - 'studio/creative-studio.*'
       - 'studio/creative-showcase.js'
+      - 'studio/photo-cutout.js'
+      - 'tests/photo-cutout.test.js'
       - 'studio/creative-layout-editor.js'
       - 'studio/menu-gallery.*'
       - 'tests/open-template-adapter.test.js'
@@ -30,7 +32,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/open-template-adapter.test.js tests/cinematic-scenes.test.js tests/gallery-real-preview.test.js tests/creative-layout.test.js tests/canvix-menu-adapter.test.js tests/template-fonts.test.js
+      - run: node --test tests/open-template-adapter.test.js tests/cinematic-scenes.test.js tests/photo-cutout.test.js tests/gallery-real-preview.test.js tests/creative-layout.test.js tests/canvix-menu-adapter.test.js tests/template-fonts.test.js
   integration:
     runs-on: ubuntu-24.04
     steps:
