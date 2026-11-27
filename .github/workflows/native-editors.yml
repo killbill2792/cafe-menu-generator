@@ -1,0 +1,47 @@
+name: Build full native OpenTempl and Motion Studio editors
+on:
+  push:
+    branches:
+      - feat/native-opentempl-motion-studio
+    paths:
+      - 'native/**'
+      - '.github/workflows/native-editors.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build both complete pinned native editor apps and inject limited data bridge
+        run: bash native/build-native.sh
+      - name: Audit static bundles, licenses, cross-window API and Cloudflare per-file limits
+        run: node native/verify-built.js studio/native
+      - name: Upload complete built editors and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-opentempl-and-motion-studio-built
+          path: studio/native
+          retention-days: 5
+      - name: Record built native editor assets on the feature branch
+        shell: bash
+        run: |
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'
+          git add -A studio/native
+          if git diff --cached --quiet; then
+            echo 'Native apps are already current'
+          else
+            git commit -m 'build(native): vendor complete pinned OpenTempl and Motion Studio static applications [skip ci]'
+            git push origin HEAD:feat/native-opentempl-motion-studio
+          fi
