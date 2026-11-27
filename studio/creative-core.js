@@ -5,7 +5,7 @@
  root.SeiyunCreativeCore=api;
 })(typeof window!=='undefined'?window:globalThis,function(){
  'use strict';
- const MODES=Object.freeze(['portal','orbit','cascade','tunnel','carousel','marquee']);
+ const MODES=Object.freeze(['cinematic','ingredients','spotlight','iced','warm','minimal']);
  const NAV=Object.freeze([{id:'menu',label:'Menu Generator'},{id:'showcase',label:'Product Showcase'}]);
  const BRAND=Object.freeze({name:'seiyun',tagline:'YEMENI COFFEE',logoUrl:'',showLogo:false,accent:'#a96a44',background:'#faf2e8',text:'#34231b',font:'fraunces'});
  const FONTS=Object.freeze(['fraunces','dm-sans','serif','system']);
@@ -56,9 +56,11 @@
  function photoTransformStyle(state,id){const t=photoTransform(state,id);return 'transform: translate('+t.x+'%, '+t.y+'%) scale('+(t.zoom/100)+'); transform-origin: center center;';}
  function motionModes(){return [...MODES];}
  function normalizeShowcase(value={},state=null){const chosen=chooseProduct(state,value.productId);return {
-  productId:chosen?.id||'',mode:MODES.includes(value.mode)?value.mode:'portal',
+  productId:chosen?.id||'',mode:MODES.includes(value.mode)?value.mode:'cinematic',
   speed:numeric(value.speed,.25,2.5,1),duration:numeric(value.duration,3,15,7),
-  background:hex(value.background,'#2e1815')
+  background:hex(value.background,'#2e1815'),customBackground:value.customBackground===true,
+  headline:text(value.headline||'',110),format:['portrait','landscape','square'].includes(value.format)?value.format:'portrait',
+  autoCutout:value.autoCutout!==false,layers:typeof value.layers==='object'&&value.layers!==null&&!Array.isArray(value.layers)?value.layers:{}
  };}
  function recordingFormat(supported){if(typeof supported!=='function')return null;
   for(const [mime,ext] of [['video/mp4;codecs=avc1.42E01E','mp4'],['video/mp4','mp4'],['video/webm;codecs=vp9','webm'],['video/webm;codecs=vp8','webm'],['video/webm','webm']]){
