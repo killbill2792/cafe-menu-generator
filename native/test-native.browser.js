@@ -45,6 +45,18 @@ const server=http.createServer((req,res)=>{
   if(mode==='menu'){
    assert(/Seiyun Yemeni Coffee/.test(fullText),'OpenTempl must include current owner branding');
    assert(/Seiyun Coffee 0/.test(fullText),'OpenTempl must bind real product names');
+   const item=frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).first();
+   await item.waitFor({timeout:15000});
+   await item.click({force:true});
+   await page.keyboard.press('Delete');
+   await page.waitForTimeout(180);
+   assert.equal(await frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).count(),0,
+     'delete must remove an actual native object, not just move it off the page');
+   await page.keyboard.press('Control+z');
+   await frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).first().waitFor({timeout:10000});
+   await page.waitForTimeout(1350);
+   assert.equal(await page.locator('#status').getAttribute('data-saved'),'menu',
+     'native Yjs editor changes must reach the private artwork draft bridge');
   }
   if(mode==='motion'){
    assert(/Library|Presets|Templates/i.test(fullText),'Native motion editor includes a real browsable library');
