@@ -29,3 +29,12 @@ test('compact card menus page efficiently without dropping items',()=>{
  assert(r.pageCount<=4);
  assert.equal((r.pages.join('').match(/data-menu-product=/g)||[]).length,26);
 });
+
+test('gallery differentiates 31 actual compositions from 47 color and typography combinations',()=>{
+ const choices=lib.distinctLayouts();
+ assert.equal(choices.length,31);
+ const classic=choices.filter(t=>t.source!=='opentempl'&&t.source!=='canvix');
+ assert.equal(classic.length,8);
+ assert(classic.every(t=>t.looks.length===3));
+ assert.equal(choices.filter(t=>['opentempl','canvix'].includes(t.source)).length,23);
+});
