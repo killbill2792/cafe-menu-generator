@@ -125,6 +125,7 @@ function wordWrap(ctx,text,maxWidth,maxLines=3){
 }
 function draw(ctx,asset,product,brand,cfg,time,opts={}){
  const w=ctx.canvas.width,h=ctx.canvas.height,scene=MODES.some(x=>x.id===cfg.mode)?cfg.mode:'cinematic',theme=palette(product,scene);
+ if(cfg.customBackground&&/^#[0-9a-f]{6}$/i.test(String(cfg.background||''))){theme.base=cfg.background;theme.mid=cfg.background;}
  const selectedLayers=layers(cfg);const speed=clamp(cfg.speed,.25,2.5,1);const t=time*speed;
  ctx.save();ctx.clearRect(0,0,w,h);background(ctx,w,h,time,theme,scene,speed);ingredientEffects(ctx,w,h,t,theme,product,scene);
  const boxes={};
