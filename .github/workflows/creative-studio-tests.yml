@@ -1,0 +1,41 @@
+name: Creative Studio tests
+on:
+  push:
+    branches: [feat/creative-studio-two-features, main]
+    paths:
+      - 'studio/creative-*.js'
+      - 'studio/creative-*.css'
+      - 'studio/menu-gallery.js'
+      - 'studio/vendor/**'
+      - 'tests/creative-core.test.js'
+      - 'tests/creative-ui.browser.js'
+      - '.github/workflows/creative-studio-tests.yml'
+  pull_request:
+    branches: [main]
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/creative-core.test.js tests/menu-gallery.test.js
+
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/creative-ui.browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: creative-studio-visual-checks
+          path: artifacts/*.png
+          if-no-files-found: ignore

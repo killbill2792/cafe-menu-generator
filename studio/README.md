@@ -39,3 +39,15 @@ The menu generator makes downloadable artifacts. **Publishing to a TV or our web
 The 24 choices are eight different compositions × three visual treatments, not 24 separate upstream GitHub downloads. See [MENU_GALLERY_SOURCES.md](MENU_GALLERY_SOURCES.md) for exact open-source sources, asset rules and third-party image-export dependencies. Only owner-uploaded photographs are used. Existing animated Screen 2, existing Supabase owner authentication, private drafts and TV publish flow are preserved.
 
 **Verification boundary:** Node/renderer tests, local Chromium desktop/mobile UI, sample three-page Chromium PDF, and PNG ZIP packaging with a mocked capture engine passed. Real CDN capture, actual Supabase CORS, Cloudflare auto-deployment and signed-in production exports need verification after deployment; do not claim those have passed.
+
+## Creative Studio: two owner-facing features (2026-11-26)
+
+The owner opens **Menu Generator** or **Product Showcase**. Legacy screen assignments and published-display tabs are not shown in the new owner workspace. Existing public menu links and `?screen=` routes continue to be supported for backward compatibility. There is no new database table or owner account.
+
+**Menu Generator:** immediately displays a selected layout filled from the existing Supabase draft. Owners tap a visible brand name, product name, ingredients or price to change the actual corresponding draft field, click a product photo to zoom/pan the **image pixels within the existing frame**, optionally open Branding to change name/logo/colors/font, browse the existing 24 template combinations, and download PDF/PNG/JPG. Existing 24 combinations are *not* 24 independent upstream menu packs.
+
+**Product Showcase:** choose a product (ignores legacy screen category filters), existing product photograph, any of six vendored MIT Motion Lab modes, background and speed. The browser runs actual motion, not a screenshot or subtle CSS float. Download GIF via MIT gifenc or native MP4/WebM depending on browser support. A safe, edge-connected near-white pixel flood-fill tool can save an additional transparent PNG copy; it is not AI segmentation and will not work for complex backgrounds.
+
+No AI model or paid API is called to generate normal menus/showcases. Native video support and file types are browser-dependent; running the video render consumes CPU. Tests and roadmap: `specs/0002-two-feature-creative-studio.md`, `docs/superpowers/plans/2026-11-26-creative-studio.md`. Sources and licenses: `studio/vendor/motion-lab/SOURCE.md`, `studio/vendor/gifenc/LICENSE.md`.
+
+**Known boundaries:** this is a two-feature owner UI shell using existing menu gallery code and an actual existing motion library, not wholesale adoption of OpenTempl/Canvix. High-fidelity physical liquid pouring requires real footage/3D/video generation. Authentication, connected Supabase upload and real CORS video capture still need live post-deploy verification. Cloudflare Workers deployment is a separate step from merging the GitHub PR.

@@ -1,0 +1,85 @@
+/* Real-browser end-to-end checks for the two owner-facing Creative Studio features. */
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const http=require('node:http');
+const path=require('node:path');
+const root=path.resolve(__dirname,'../studio');
+fs.mkdirSync(path.resolve(__dirname,'../artifacts'),{recursive:true});
+const type={'.html':'text/html','.js':'application/javascript','.css':'text/css','.png':'image/png','.json':'application/json'};
+const server=http.createServer((req,res)=>{
+ const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+ const full=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
+ if(!full.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
+ fs.readFile(full,(err,body)=>{if(err){res.writeHead(404);res.end('missing');return;}res.writeHead(200,{'content-type':type[path.extname(full)]||'text/plain'});res.end(body)});
+});
+const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==';
+(async()=>{
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const url='http://127.0.0.1:'+server.address().port+'/';
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ const page=await browser.newPage({viewport:{width:1365,height:900},acceptDownloads:true});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/cloud.js',route=>route.fulfill({contentType:'application/javascript',body:'window.SEIYUN_CONFIG={};window.seiyunCloud=null;'}));
+ await page.route('**/cloud-bridge.js',route=>route.fulfill({contentType:'application/javascript',body:''}));
+ await page.route(/^https:\/\//,route=>route.abort());
+ await page.goto(url,{waitUntil:'domcontentloaded'});
+ await page.evaluate(()=>{draft=starter();render();});
+ assert.equal(await page.locator('.cs-tab').count(),2,'exactly two top-level features');
+ assert.equal(await page.locator('.cs-design').count(),0,'template gallery hidden until chosen');
+ await page.screenshot({path:'artifacts/menu-generator-desktop.png',fullPage:true});
+ assert(await page.locator('.cs-art-page .mg-item').count()>0,'menu artboard visible immediately');
+ assert.equal(await page.locator('.cs-tab').allInnerTexts().then(s=>s.join(',')),'▦ Menu Generator,▶ Product Showcase');
+ const first=page.locator('.mg-brand-name').first();await first.click();await page.keyboard.press('Control+A');await page.keyboard.insertText('Seiyun Studio Cafe');await page.locator('.cs-intro h1').click();
+ assert.equal(await page.evaluate(()=>draft.branding.name),'Seiyun Studio Cafe','inline brand edit reaches canonical draft');
+ await page.evaluate(src=>{draft.products[0].photos=[src];draft.products[0].primary=0;render();},png);
+ await page.locator('[data-cs-photo="ref-01"]').first().click();
+ await page.locator('[data-cs-zoom="zoom"]').evaluate(el=>{el.value='165';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ assert.match(await page.locator('[data-menu-product="ref-01"] img').first().getAttribute('style'),/scale\(1\.65\)/,'real photo is zoomed without changing its box');
+ await page.locator('[data-cs-action="designs"]').click();
+ assert.equal(await page.locator('.cs-design').count(),24,'existing choices preserved');
+ await page.locator('[data-cs-design="photo-cards-dark"]').click();
+ assert((await page.locator('#csArtPage').innerHTML()).includes('mg-layout-photo-cards'),'template switch updates actual page');
+ await page.locator('[data-cs-tab="showcase"]').click();
+ await page.locator('.scene-card').first().waitFor({timeout:12000});
+ assert.equal(await page.locator('.scene-card').count(),6,'Motion Lab renderer creates moving cards');
+ const initial=await page.locator('.scene-card').first().evaluate(n=>n.style.transform);
+ await page.waitForTimeout(1100);
+ const next=await page.locator('.scene-card').first().evaluate(n=>n.style.transform);
+ assert.notEqual(initial,next,'actual motion changes frame position');
+ await page.locator('[data-cs-motion="orbit"]').click();
+ await page.locator('#csMotion[data-mode="orbit"]').waitFor({timeout:12000});
+ assert.equal(await page.locator('#csMotion').getAttribute('data-mode'),'orbit','motion choices switch modes');
+ await page.screenshot({path:'artifacts/product-showcase-desktop.png',fullPage:true});
+ // GIF export uses the real vendored encoder, not a mocked output.
+ const dl=page.waitForEvent('download',{timeout:65000});
+ await page.locator('[data-cs-action="gif"]').click();
+ const download=await dl;
+ const data=fs.readFileSync(await download.path());
+ assert.equal(data.subarray(0,6).toString(),'GIF89a','download is a valid GIF');
+ assert(data.byteLength>2048,'GIF contains frames and image data');
+ let videoBytes=0,videoType='';
+ const supports=await page.evaluate(()=>typeof MediaRecorder==='function'&&!!HTMLCanvasElement.prototype.captureStream&&!!SeiyunCreativeCore.recordingFormat(mime=>MediaRecorder.isTypeSupported(mime)));
+ if(supports){
+   const videoDownload=page.waitForEvent('download',{timeout:45000});
+   await page.locator('[data-cs-action="video"]').click();
+   const v=await videoDownload;
+   const bytes=fs.readFileSync(await v.path());
+   videoBytes=bytes.length;videoType=v.suggestedFilename();
+   assert(bytes.length>1000,'video contains actual encoded frames');
+   assert(/\.(mp4|webm)$/.test(videoType),'native video extension is accurate');
+ }
+ console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','24 gallery options','template switch','live Motion Lab frames','motion selection','GIF download',...(supports?['native video export']:[])],gifBytes:data.byteLength,videoBytes,videoType,pageErrors:errors}));
+ assert.deepEqual(errors,[],'no uncaught browser exceptions');
+ const mobile=await browser.newPage({viewport:{width:390,height:800}});
+ await mobile.route('**/cloud.js',route=>route.fulfill({contentType:'application/javascript',body:'window.SEIYUN_CONFIG={};window.seiyunCloud=null;'}));
+ await mobile.route('**/cloud-bridge.js',route=>route.fulfill({contentType:'application/javascript',body:''}));
+ await mobile.route(/^https:\/\//,route=>route.abort());
+ await mobile.goto(url,{waitUntil:'domcontentloaded'});
+ await mobile.evaluate(()=>{draft=starter();render();});
+ const overflow=await mobile.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+ await mobile.screenshot({path:'artifacts/menu-generator-mobile.png',fullPage:true});
+ assert(overflow<=5,'mobile interface should not horizontally overflow: '+overflow);
+ console.log('Mobile horizontal overflow:',overflow);
+ await browser.close();await new Promise(resolve=>server.close(resolve));
+})().catch(e=>{console.error(e);server.close();setTimeout(()=>process.exit(1),2000);});
