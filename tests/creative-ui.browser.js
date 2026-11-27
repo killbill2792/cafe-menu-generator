@@ -30,7 +30,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.screenshot({path:'artifacts/menu-generator-desktop.png',fullPage:true});
  assert(await page.locator('.cs-art-page .mg-item').count()>0,'menu artboard visible immediately');
  assert.equal(await page.locator('.cs-tab').allInnerTexts().then(s=>s.join(',')),'▦ Menu Generator,▶ Product Showcase');
- const first=page.locator('.mg-brand-name').first();await first.click();await page.keyboard.press('Control+A');await page.keyboard.insertText('Seiyun Studio Cafe');await page.locator('.cs-intro h1').click();
+ const first=page.locator('.mg-brand-name').first();await first.dblclick();await page.keyboard.press('Control+A');await page.keyboard.insertText('Seiyun Studio Cafe');await page.locator('.cs-intro h1').click();
  assert.equal(await page.evaluate(()=>draft.branding.name),'Seiyun Studio Cafe','inline brand edit reaches canonical draft');
  await page.evaluate(src=>{draft.products[0].photos=[src];draft.products[0].primary=0;render();},png);
  await page.locator('[data-cs-photo="ref-01"]').first().click();
