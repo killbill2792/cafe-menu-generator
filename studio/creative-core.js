@@ -57,8 +57,10 @@
  function motionModes(){return [...MODES];}
  function normalizeShowcase(value={},state=null){const chosen=chooseProduct(state,value.productId);return {
   productId:chosen?.id||'',mode:MODES.includes(value.mode)?value.mode:'portal',
+  sceneId:['cinematic-reveal','ingredient-motion','product-spotlight','fresh-energy','warm-cafe'].includes(value.sceneId)?value.sceneId:'',
   speed:numeric(value.speed,.25,2.5,1),duration:numeric(value.duration,3,15,7),
-  background:hex(value.background,'#2e1815')
+  background:hex(value.background,'#2e1815'),
+  layerOverrides:typeof value.layerOverrides==='object'&&value.layerOverrides&&!Array.isArray(value.layerOverrides)?value.layerOverrides:{}
  };}
  function recordingFormat(supported){if(typeof supported!=='function')return null;
   for(const [mime,ext] of [['video/mp4;codecs=avc1.42E01E','mp4'],['video/mp4','mp4'],['video/webm;codecs=vp9','webm'],['video/webm;codecs=vp8','webm'],['video/webm','webm']]){
