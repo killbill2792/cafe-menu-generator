@@ -70,6 +70,23 @@ const server=http.createServer((req,res)=>{
   assert(!errors.some(s=>/Cannot read properties of undefined|Hydration failed|Uncaught TypeError/i.test(s)),mode+' critical JS errors: '+errors.slice(0,3));
   await context.close();
  }
+ // Mobile layouts use the upstream editors' own touch UI, not our CSS-grid canvas.
+ for(const mode of ['menu','motion']){
+   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+   const page=await context.newPage();
+   await page.goto(origin+'/native-harness?mode='+mode);
+   await page.waitForFunction(()=>document.querySelector('#status').textContent==='LOADED',{timeout:60000});
+   const frame=page.frameLocator('#native');
+   const overflow=await frame.locator('body').evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+   assert(overflow<30,mode+' native touch viewport should not overflow horizontally: '+overflow);
+   if(mode==='menu'){
+     const item=frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).first();
+     await item.waitFor({timeout:12000});
+     await item.tap({force:true});
+   }
+   await page.screenshot({path:path.join(shots,'native-'+mode+'-mobile.png'),fullPage:false});
+   await context.close();
+ }
  await browser.close();server.close();
  console.log('NATIVE_REAL_EDITORS_BROWSER_PASSED: owner catalog and full native motion library loaded');
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
