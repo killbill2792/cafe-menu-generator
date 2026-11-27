@@ -32,3 +32,10 @@ test('can position source element with drag updates for export without modifying
  assert(r.pages[0].includes('data-layout-key="brand"'));
  assert(r.pages[0].includes('left:33px'));
 });
+
+test('resizing at the right or bottom edge never clips a product or brand outside the export page',()=>{
+ const state={menuArtwork:{},products:[]};
+ const box=api.saveMenuLayout(state,'opentempl:food-menu-checker-diner','brand',{x:750,y:1000,w:200,h:160,fontSize:70},{width:816,height:1056});
+ assert(box.x+box.w<=816,'right edge within native printable page');
+ assert(box.y+box.h<=1056,'bottom edge within native printable page');
+});
