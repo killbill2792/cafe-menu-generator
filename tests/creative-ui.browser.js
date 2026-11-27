@@ -22,7 +22,14 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/cloud.js',route=>route.fulfill({contentType:'application/javascript',body:'window.SEIYUN_CONFIG={};window.seiyunCloud=null;'}));
  await page.route('**/cloud-bridge.js',route=>route.fulfill({contentType:'application/javascript',body:''}));
- await page.route(/^https:\/\//,route=>route.abort());
+ await page.route(/^https:\/\//,route=>{
+   const url=route.request().url();
+   if(url.includes('html2canvas@1.4.1/dist/html2canvas.min.js'))
+     return route.fulfill({contentType:'application/javascript',body:fs.readFileSync(path.resolve(__dirname,'../node_modules/html2canvas/dist/html2canvas.min.js'))});
+   if(url.includes('jszip@3.10.1/dist/jszip.min.js'))
+     return route.fulfill({contentType:'application/javascript',body:fs.readFileSync(path.resolve(__dirname,'../node_modules/jszip/dist/jszip.min.js'))});
+   return route.abort();
+ });
  await page.goto(url,{waitUntil:'domcontentloaded'});
  await page.evaluate(()=>{draft=starter();render();});
  assert.equal(await page.locator('.cs-tab').count(),2,'exactly two top-level features');
@@ -109,6 +116,28 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
    assert(/\.(mp4|webm)$/.test(videoType),'native video extension is accurate');
  }
  console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','45 gallery options','template switch','single cinematic hero','animated environment','scene selection','GIF download',...(supports?['native video export']:[])],gifBytes:data.byteLength,videoBytes,videoType,pageErrors:errors}));
+ // The original image/PDF features must still work with an imported native menu.
+ await page.locator('[data-cs-tab="menu"]').click();
+ await page.evaluate(src=>{
+   draft.products=draft.products.slice(0,2);
+   draft.products[0].photos=[src];draft.products[0].primary=0;
+   draft.menuArtwork.templateId='opentempl:food-menu-cafe-nord';draft.menuArtwork.format='a4';
+   render();
+ },png);
+ const rasterDownload=page.waitForEvent('download',{timeout:90000});
+ await page.locator('[data-cs-action="png"]').click();
+ const raster=await rasterDownload, rasterData=fs.readFileSync(await raster.path());
+ assert(rasterData.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),'real html2canvas export contains PNG bytes');
+ const width=rasterData.readUInt32BE(16),height=rasterData.readUInt32BE(20);
+ assert(width>=794&&height>=1123,'PNG is rendered at full print resolution');
+ console.log(JSON.stringify({rasterBytes:rasterData.length,rasterWidth:width,rasterHeight:height}));
+ const popupWait=page.waitForEvent('popup',{timeout:12000});
+ await page.locator('[data-cs-action="pdf"]').click();
+ const popup=await popupWait;
+ await popup.waitForLoadState('domcontentloaded');
+ assert.equal(await popup.locator('[data-opentempl-source]').count(),1,'PDF/Print popup preserves imported template');
+ assert.equal(await popup.locator('[data-menu-product]').count(),2,'PDF/Print popup uses owner product data');
+ await popup.close();
  assert.deepEqual(errors,[],'no uncaught browser exceptions');
  const mobile=await browser.newPage({viewport:{width:390,height:800}});
  await mobile.route('**/cloud.js',route=>route.fulfill({contentType:'application/javascript',body:'window.SEIYUN_CONFIG={};window.seiyunCloud=null;'}));
