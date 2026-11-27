@@ -52,8 +52,32 @@ photo:safePhoto((Array.isArray(p.photos)?p.photos:[])[Number(p.primary)||0]||(Ar
 }));}
 function currency(v,state){const n=Number(v);const symbol={USD:'$',CAD:'CA$',EUR:'€',GBP:'£',AED:'AED ',SAR:'SAR ',INR:'₹',JPY:'¥'}[state?.currency]||'$';return Number.isFinite(n)?symbol+n.toFixed(state?.currency==='JPY'?0:2):'Price TBD';}
 function prices(p,state){if(!p.sizes.length)return '<span class="mg-no-price">Price to add</span>';return p.sizes.map((s,i)=>'<span>'+esc(s.name)+' <b data-cs-edit="price" data-cs-price-index="'+i+'">'+esc(currency(s.price,state))+'</b></span>').join('');}
-function capacityFor(state,config){const t=REGISTRY.find(t=>t.id===config.templateId)||REGISTRY[0];const f=FAMILY.find(f=>f.id===t.layout);const fmt=FORMATS[config.format]||FORMATS.letter;const aspect=fmt.h/fmt.w;let factor=aspect<.8?.73:aspect<1.15?.87:aspect>1.6?1.35:1;const maxSpace=Math.max(clamp(config.imageSpace,25,70),...Object.values(config.photoSizeByProduct||{}).map(x=>clamp(x,25,70)));const photoFactor=1+(43-maxSpace)/60;return Math.min(25,Math.max(2,Math.floor(f.capacity*factor*photoFactor)));}
-function paginate(items,perPage){const pages=[];for(let i=0;i<items.length;i+=perPage)pages.push(items.slice(i,i+perPage));return pages.length?pages:[[]];}
+function capacityFor(state,config){
+ const t=REGISTRY.find(t=>t.id===config.templateId)||REGISTRY[0];
+ const f=FAMILY.find(x=>x.id===t.layout)||FAMILY[0];
+ const fmt=FORMATS[config.format]||FORMATS.letter;
+ const items=productsOf(state),withPhoto=items.filter(p=>!!p.photo).length;
+ const photoRatio=items.length?withPhoto/items.length:0;
+ const avgLength=items.length?items.reduce((n,p)=>n+p.name.length,0)/items.length:12;
+ const aspect=fmt.h/fmt.w;
+ const shapeFactor=aspect<.8?.7:aspect<1.14?.85:aspect>1.6?1.2:1;
+ const defaults={ 'photo-left':10,'photo-right':10,'photo-cards':12,'gallery':12,
+  'editorial':9,'classic':18,'split':10,'compact':20 };
+ const base=defaults[f.id]||f.capacity;
+ const space=clamp(config.imageSpace,25,70);
+ const photoLoad=Math.max(0,(space-43))/100*(.30+.70*photoRatio);
+ const textLoad=avgLength>42?.78:avgLength>29?.88:1;
+ return Math.max(3,Math.min(25,Math.floor(base*shapeFactor*(1-photoLoad)*textLoad)));
+}
+function paginate(items,perPage){
+ const pagesCount=Math.ceil(items.length/Math.max(1,perPage));
+ const pages=[];let offset=0;
+ for(let i=0;i<pagesCount;i++){
+  const count=Math.ceil((items.length-offset)/(pagesCount-i));
+  pages.push(items.slice(offset,offset+count));offset+=count;
+ }
+ return pages.length?pages:[[]];
+}
 function thumb(p,space,opts={}){const n=clamp(space,25,70),tr=opts.photoTransformByProduct?.[p.id]||{},zoom=clamp(tr.zoom||100,100,240),x=clamp(tr.x||0,-60,60),y=clamp(tr.y||0,-60,60);
 return '<div class="mg-item-photo" data-cs-photo="'+esc(p.id)+'" style="--mg-photo-space:'+n+'%">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="eager" crossorigin="anonymous" style="transform:translate('+x+'%, '+y+'%) scale('+(zoom/100)+');transform-origin:center">':'<span class="mg-photo-empty">PHOTO TO ADD</span>')+'</div>';}
 function designStyle(opts,key,width=816,height=1056){
