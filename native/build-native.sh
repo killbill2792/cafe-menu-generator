@@ -26,7 +26,22 @@ s=s.replace(anchor,anchor+"\nimport { installSeiyunBridge } from './integrations
 anchor="createRoot(document.getElementById('root')!).render(<App />);"
 assert anchor in s
 s=s.replace(anchor,"installSeiyunBridge();\n"+anchor)
+# Do not upload any product data or UI usage stats to the original project.
+s=s.replace("import { pingOncePerDay } from './stats/client';","").replace("pingOncePerDay();","")
 main.write_text(s)
+
+# Different signed-in owners using one shared device must never see a previous
+# owner's design listing. Partition OpenTempl's native IndexedDB names by owner.
+owner=Path('apps/editor/src/io/db.ts')
+s=owner.read_text();anchor="const DB_NAME = 'tavla';"
+assert anchor in s
+s=s.replace(anchor,"const nativeTenant = new URL(location.href).searchParams.get('seiyun_owner');\\nconst DB_NAME = nativeTenant && /^[a-f0-9-]{36}$/i.test(nativeTenant) ? 'seiyun-native-'+nativeTenant : 'tavla';")
+s=s.replace('\\n','\\n')
+owner.write_text(s)
+ids=Path('apps/editor/src/io/designs.ts')
+s=ids.read_text();anchor="const dbName = (id: string) => `tavla-design-${id}`;";assert anchor in s
+s=s.replace(anchor,"const nativeTenant = new URL(location.href).searchParams.get('seiyun_owner');\\nconst dbName = (id: string) => nativeTenant && /^[a-f0-9-]{36}$/i.test(nativeTenant) ? `seiyun-native-${nativeTenant}-design-${id}` : `tavla-design-${id}`;")
+ids.write_text(s)
 
 editor=Path('apps/editor/src/editor/EditorScreen.tsx')
 s=editor.read_text()
@@ -48,6 +63,10 @@ PY
   npm --workspace @opentempl/editor run build
   mkdir -p "$ROOT/studio/native/menu"
   cp -a dist/app/. "$ROOT/studio/native/menu/"
+  # Cloudflare Workers static assets forbid any single file above 25 MiB.
+  # ONNX's optional background-removal WASM exceeds this limit; preserve the
+  # complete native artboard/editor, but omit this optional model binary.
+  find "$ROOT/studio/native/menu/assets" -type f -name 'ort-wasm*.wasm' -size +25M -print -delete
   cp LICENSE "$ROOT/studio/native/menu/UPSTREAM-LICENSE.txt"
   printf 'OpenTempl\n%s\nhttps://github.com/noah-thing/opentempl\n' "$OPENTEMPL_SHA" > "$ROOT/studio/native/menu/UPSTREAM-SOURCE.txt"
   cd "$STAGING"
