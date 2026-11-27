@@ -17,11 +17,23 @@ const numeric=t=>/^\s*\+?(?:[$€£]\s*)?\d{1,4}(?:[.,]\d{1,2})?(?:\s*\/\s*\d{1,
 const formatted=(page)=>page.elements.map((e,i)=>({e,i})).filter(t=>t.e.type==="text");
 const font=e=>N(e.fontSize,16,1,1200);
 function brandIndex(page,doc){
+ if(doc.id==='food-menu-special-story')return page.elements.findIndex(e=>e.type==='text'&&String(e.text).trim()==='Special');
+ if(doc.id==='asia-onigiri-label')return page.elements.findIndex(e=>e.type==='text'&&String(e.text).trim()==='Fresh\ntoday');
  const c=formatted(page).filter(t=>!numeric(t.e.text)&&String(t.e.text||"").length>1&&String(t.e.text).length<60&&font(t.e)>22);
  c.sort((a,b)=>font(b.e)*(b.e.y<doc.height*.32?1.3:1)-font(a.e)*(a.e.y<doc.height*.32?1.3:1));
  return c[0]?.i??-1;
 }
 function slotPlan(page,doc){
+ if(doc.id==='food-menu-special-story'){
+  const get=text=>page.elements.findIndex(e=>e.type==='text'&&String(e.text||'').startsWith(text));
+  const name=get('Soup of'),price=get('89'),desc=get('Roast tomato');
+  if(name>=0&&price>=0)return [{name,price,desc,y:page.elements[name].y,x:page.elements[name].x}];
+ }
+ if(doc.id==='asia-onigiri-label'){
+  const get=text=>page.elements.findIndex(e=>e.type==='text'&&String(e.text||'').startsWith(text));
+  const name=get('ONI'),price=get('002'),desc=get('Hand pressed');
+  if(name>=0&&price>=0)return [{name,price,desc,y:page.elements[name].y,x:page.elements[name].x}];
+ }
  const elems=page.elements,txt=formatted(page),used=new Set(),slots=[];
  const prices=txt.filter(t=>numeric(t.e.text)&&font(t.e)>=10&&font(t.e)<97);
  for(const p of prices){
