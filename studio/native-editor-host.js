@@ -21,11 +21,11 @@ function modeHTML(mode,state,core){
  '<div class="cs-native-photo-area"><strong>Choose the exact photograph shown in the advertisement</strong><div class="cs-native-photos">'+
  choices.map((url,i)=>'<button type="button" class="cs-native-photo '+(chosen?.index===i?'selected':'')+'" data-native-photo="'+i+'" aria-pressed="'+(chosen?.index===i)+'"><img loading="lazy" src="'+e(url)+'" alt="'+e(p?.name||'product')+' photograph '+(i+1)+'"><span>Photo '+(i+1)+'</span></button>').join('')+
  (choices.length?'':'<p>No photo saved for this product.</p>')+'</div><button class="cs-btn" data-cs-action="ad-upload">+ Upload another product photo</button></div></div>'+
- (chosen?'<div class="cs-native-status" id="nativeStatus">Opening the native 224-preset Motion Studio editor for '+e(p?.name)+'…</div><div class="cs-native-frame"><iframe id="nativeEditorFrame" title="Complete Motion Studio Open animation editor" allow="fullscreen; clipboard-write" loading="eager" referrerpolicy="same-origin"></iframe></div>':
+ (chosen?'<div class="cs-native-status" id="nativeStatus">Opening the full native Motion Studio editor for '+e(p?.name)+'…</div><div class="cs-native-frame"><iframe id="nativeEditorFrame" title="Complete Motion Studio Open animation editor" allow="fullscreen; clipboard-write" loading="eager" referrerpolicy="same-origin"></iframe></div>':
  '<section class="cs-native-empty"><strong>Choose a product photograph above</strong><p>We will not guess which image is correct or use a screenshot of the old website as a drink. Your photo selection is saved for this product.</p></section>')+
  '<p class="cs-native-legal">Motion Studio Open is a complete Apache-2.0 native editor with a broad library of general motion effects; not every effect is an existing food commercial. It runs locally in the browser with native MP4/WebM/GIF exports where supported.</p>';
 }
-function nativeUrl(type,nonce,state){
+function nativeUrl(type,nonce,state,core){
  const owner=root.seiyunCloud?.ownerId;
  if(!owner)return null;
  const prefix=type==='menu'?'menu':'motion';
@@ -34,6 +34,7 @@ function nativeUrl(type,nonce,state){
  // Partition anonymous IndexedDB storage by the current signed-in owner to avoid
  // accidentally exposing a previous café's local designs in the native home screen.
  url.searchParams.set('seiyun_owner',String(owner));
+ if(type!=='menu'){const p=core.chooseProduct(state,core.normalizeShowcase(state.showcaseArtwork||{},state).productId);if(p?.id)url.searchParams.set('seiyun_product',String(p.id));}
  return url.href;
 }
 function catalog(type,state,core){
@@ -103,9 +104,11 @@ async function nonDestructiveCutout(url){
  });
 }
 async function mount(state,type,core,save){
+ // The owner navigation calls this 'showcase'; the bridge uses 'motion'.
+ type=type==='menu'?'menu':'motion';
  dispose();
  const frame=$('#nativeEditorFrame');if(!frame)return;
- const n=nonce(),url=nativeUrl(type,n,state);
+ const n=nonce(),url=nativeUrl(type,n,state,core);
  if(!url){setStatus('Please sign in to open this editor.',true);return;}
  active={frame,nonce:n,type,state,core,save,sent:false};
  root.addEventListener('message',onMessage);
@@ -121,7 +124,7 @@ async function mount(state,type,core,save){
    return;
   }
   frame.src=url;
-  active.loadTimeout=setTimeout(()=>{if(active?.nonce===n)setStatus('The full editor did not finish loading. Reload this page; check the browser console or deployment logs if this persists.',true);},60000);
+  active.loadTimeout=setTimeout(()=>{if(active?.nonce===n)setStatus('The full editor did not finish loading. Reload this page; check the browser console or deployment logs if this persists.',true);},90000);
  }catch{setStatus('The native editor could not be reached. Check this deployment and internet connection.',true);}
 }
 function onClick(ev){
