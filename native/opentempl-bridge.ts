@@ -14,7 +14,8 @@ type OwnerPayload = {
   currency?:string; products?:OwnerProduct[]; templateId?:string; selectedPhotoId?:string;
   saved?:{snapshot:DesignSnapshot};
 };
-const key='seiyun:owner:catalog';
+const ownerScope=new URL(location.href).searchParams.get('seiyun_owner')||'unscoped';
+const key='seiyun:owner:catalog:'+ownerScope;
 const MAX_PRODUCTS=180;
 const text=(v:unknown,max=160)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,'').trim().slice(0,max);
 const palette=v=>/^#[a-f0-9]{6}$/i.test(String(v||''))?String(v):'';
@@ -166,7 +167,9 @@ function createSourcePages(template:DesignSnapshot,owner:OwnerPayload,images:Map
   for(const el of headings){
    if(el===header)continue;
    if(/^(?:hot|cold|coffee|tea|extras|small plates|burgers|drinks|cocktails|sea|land|garden|broths|dry|sparkling|white|orange|red|by the glass|other|food)$/i.test(el.text.trim())){
-    add(sourceText(el,'section:'+section,categories[section++%Math.max(1,categories.length)]||'MENU'));
+    const group=slots.map((slot,i)=>({slot,product:batch[i]})).filter(x=>x.product&&x.slot.name.y>=el.y&&Math.abs(x.slot.name.x-el.x)<Math.max(25,el.w*.2));
+    const sectionCats=[...new Set(group.slice(0,4).map(x=>x.product.category||'Menu'))];
+    add(sourceText(el,'section:'+section++,sectionCats.length===1?sectionCats[0]:'MENU'));
    }else if(/^(?:menu|our menu|the menu)$/i.test(el.text.trim()))add(sourceText(el,'page:heading','OUR MENU'));
   }
   slots.forEach((slot,index)=>{
@@ -321,22 +324,29 @@ async function buildOwnerDesign(owner:OwnerPayload) {
   const {assets,map}=await cachedOwnerImages(owner);
   if(owner.saved?.snapshot&&owner.saved.snapshot.pageOrder?.length){
     const snap=structuredClone(owner.saved.snapshot);
-    // Reattach only catalog photos, and refresh bound factual text without altering native user coordinates.
+    // Reopen the upstream native document on this owner/device when it is
+    // current. Its Yjs IndexedDB contains history and any native uploads, not
+    // just the serialized Supabase geometry. This avoids cloning every reload.
+    const nativeId=snap.meta.id;
+    if(typeof nativeId==='string'&&/^[a-z0-9_-]{1,100}$/i.test(nativeId)){
+      try{
+        const local=await openDesign(nativeId);
+        if(local){
+          const localSnapshot=local.doc.toSnapshot();
+          const current=localSnapshot.meta.updatedAt>=snap.meta.updatedAt&&localSnapshot.pageOrder.length>0;
+          await local.close();
+          if(current)return nativeId;
+        }
+      }catch{/* A new browser can fall back to the private saved snapshot. */}
+    }
+    // A design is not the product catalog. Preserve the owner's edited
+    // typography, exact wording, deletion, positions and sizes on reload.
+    // Starting a fresh template is the explicit way to rebind catalog facts.
+    // Only remap the source catalog image IDs, which are local media handles.
     for(const el of Object.values(snap.elements)){
       if(el.type==='image'&&el.name?.startsWith('product:')&&el.name.endsWith(':photo')){
         const productId=el.name.slice(8,-6);
         el.assetId=map.get(productId)||null;
-      }
-      if(el.type==='text'&&el.name?.startsWith('brand:')){
-        if(el.name==='brand:name')el.text=owner.brand?.name||el.text;
-        if(el.name==='brand:tagline')el.text=owner.brand?.tagline||el.text;
-      }
-      if(el.type==='text'&&el.name?.startsWith('product:')){
-        const [,prodId,field]=el.name.split(':');const p=owner.products?.find(v=>v.id===prodId);
-        if(!p)continue;
-        if(field==='name')el.text=p.name||'';
-        if(field==='ingredients')el.text=p.ingredients||'';
-        if(field==='price')el.text=(p.sizes||[]).map(sz=>(sz.name?sz.name+'  ':'')+(owner.currency==='USD'?'$':'')+Number(sz.price||0).toFixed(2)).join('  ·  ');
       }
     }
     return createDesign({snapshot:snap,assets});
