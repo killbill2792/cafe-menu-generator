@@ -102,3 +102,8 @@
 .mg-layout-photo-right .mg-item.mg-item-largephoto .mg-item-photo{flex:0 0 54%;width:100%;height:54%}
 .mg-layout-photo-left .mg-item.mg-item-largephoto .mg-item-info,
 .mg-layout-photo-right .mg-item.mg-item-largephoto .mg-item-info{justify-content:flex-start}
+
+/* Brand typography is part of the exported artwork, not only the editor. */
+.mg-export-page .mg-brand,
+.mg-export-page .mg-item-name {font-family:var(--mg-display-font,Georgia,serif);}
+.mg-export-page .mg-brand-logo {display:block;max-height:70px;max-width:260px;object-fit:contain;}
