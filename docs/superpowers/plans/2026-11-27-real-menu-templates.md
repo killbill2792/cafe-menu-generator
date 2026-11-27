@@ -52,3 +52,18 @@ No demo photos, no new database or paid API, no arbitrary remote scripts, keep 2
 - [ ] Re-run Node tests and real browser screenshots/print checks.
 - [ ] Review licenses and script failure fallbacks, new source pack provenance.
 - [ ] Record progress and unresolved Cloudflare/owner-auth checks.
+
+### Task 5: Import exact Canvix café menu originals
+**Files:** Create `studio/vendor/canvix/curated-menu.js`, `studio/vendor/canvix/LICENSE`, `studio/vendor/canvix/SOURCE.md`; modify `studio/menu-gallery.js`, `studio/index.html`, `studio/open-template-adapter.js`; test `tests/canvix-menu-adapter.test.js`.
+**Interfaces:** `window.SeiyunCanvixMenuPack`, source registry items `canvix:artisan-menu`, `canvix:cafe-menu` use same source-page adapter and owner catalog as OpenTempl.
+- [ ] Add failing tests for exact MIT source IDs/geometry, two designs and their provenance.
+- [ ] Observe RED in CI.
+- [ ] Convert reviewed native Canvix text/shape/line/sticker geometry into the app's normalized source format; preserve source coordinate/font/color and page backgrounds (not demo stock art).
+- [ ] Bind exactly 26 owner products (never Canvix demo brand/food), with actual non-overlapping pages and export/print parity.
+- [ ] Run tests and review browser screens, commit.
+
+### Task 6: Visual quality gates and release eligibility
+**Files:** `tests/creative-ui.browser.js`, `studio/creative-studio.js/css`, `studio/open-template-adapter.js/css`, `agent.md`.
+- [ ] Test real-photo previews and all output sizes; no text spills, blank only pages, or duplicate products.
+- [ ] Verify real play/encoded GIF/MP4 visual distinctness for Saffron vs Matcha, not just file bytes.
+- [ ] Record exact verified and blocked items; keep feature branch open if signed-in Cloudflare/Supabase test unavailable.
