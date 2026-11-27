@@ -102,8 +102,10 @@ function select(el){
    saveScene({scale:clamp(prev.scale*factor,.4,2.6),fontSize:key==='title'?clamp(prev.fontSize*factor,18,150):prev.fontSize});
    dirty=true;
   }else{
-   const ratio=previewScale||1;
-   saveMenu({...startBox,w:clamp(number(e.width,startBox.w)/ratio,24,native.w),h:clamp(number(e.height,startBox.h)/ratio,20,native.h),
+   // Moveable's resize width/height are target CSS layout pixels, even when the
+   // ancestor artboard is visually scaled. Dividing here by the preview scale
+   // would double-enlarge the saved geometry.
+   saveMenu({...startBox,w:clamp(number(e.width,startBox.w),24,native.w),h:clamp(number(e.height,startBox.h),20,native.h),
      fontSize:clamp(startBox.fontSize*factor,8,180)});
    dirty=true;
   }
