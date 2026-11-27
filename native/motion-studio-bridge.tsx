@@ -145,18 +145,29 @@ export default function SeiyunNativeBridge() {
          send('SEIYUN_NATIVE_LOADED',{presets:'full-upstream-motion-library',layers:useSceneStore.getState().tracks.length,assets:useSceneStore.getState().assets.length,templateId:useSceneStore.getState().activeTemplateId});
          // Persist a serializable scene, not the native editor's functions or original photo blobs.
          let last='',timer:ReturnType<typeof setTimeout>|undefined;
-         unsubscribe=useSceneStore.subscribe(s=>{
-           if(timer)clearTimeout(timer);
-           timer=setTimeout(()=>{
-             const safe={tracks:s.tracks,activeTrackId:s.activeTrackId,activeTemplateId:s.activeTemplateId,
-               values:s.values,easing:s.easing,aspect:s.aspect,width:s.width,height:s.height,
-               duration:s.duration,fps:s.fps,background:s.background,logo:s.logo,sceneCamera:s.sceneCamera,
-               effects:s.effects,assets:s.assets.map(a=>({...a,url:a.origin==='upload'?'':a.url})),cardShape:s.cardShape};
-             const raw=JSON.stringify(safe);
-             if(raw.length>700000||raw===last)return;last=raw;
-             send('SEIYUN_NATIVE_SAVE',{scene:safe});
-           },1300);
+         const persist=()=>{
+           const st=useSceneStore.getState();
+           const safe={tracks:st.tracks,activeTrackId:st.activeTrackId,activeTemplateId:st.activeTemplateId,
+             values:st.values,easing:st.easing,aspect:st.aspect,width:st.width,height:st.height,
+             duration:st.duration,fps:st.fps,background:st.background,logo:st.logo,sceneCamera:st.sceneCamera,
+             effects:st.effects,assets:st.assets.map(a=>({...a,url:a.origin==='upload'?'':a.url})),cardShape:st.cardShape};
+           const raw=JSON.stringify(safe);
+           if(raw.length>700000||raw===last)return;last=raw;
+           send('SEIYUN_NATIVE_SAVE',{scene:safe});
+         };
+         const unbind=useSceneStore.subscribe((st,prev)=>{
+           // Frame/playing changes must not continually postpone autosave.
+           // Compare only native project fields, not the playback clock.
+           if(st.tracks===prev.tracks&&st.assets===prev.assets&&st.background===prev.background&&
+              st.logo===prev.logo&&st.sceneCamera===prev.sceneCamera&&st.effects===prev.effects&&
+              st.aspect===prev.aspect&&st.width===prev.width&&st.height===prev.height&&
+              st.cardShape===prev.cardShape&&st.activeTrackId===prev.activeTrackId&&
+              st.duration===prev.duration&&st.fps===prev.fps)return;
+           if(timer)clearTimeout(timer);timer=setTimeout(persist,1000);
          });
+         unsubscribe=()=>{unbind();if(timer)clearTimeout(timer);};
+         persist();
+
        }catch(e){send('SEIYUN_NATIVE_ERROR',{error:String(e).slice(0,240)});}
      };
      init();
