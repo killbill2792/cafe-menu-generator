@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="550" height="840" viewBox="0 0 550 840">
+<defs><linearGradient id="drink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fbcf9a"/><stop offset=".42" stop-color="#e2a15e"/><stop offset="1" stop-color="#b9663e"/></linearGradient><linearGradient id="foam" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fffaf1"/><stop offset="1" stop-color="#e6d7c2"/></linearGradient></defs>
+<ellipse cx="279" cy="783" rx="145" ry="23" fill="#19140f" opacity=".19"/>
+<path d="M85 170 L464 170 403 738 Q390 797 276 800 Q163 794 151 738Z" fill="url(#drink)" stroke="#f5dbc2" stroke-width="8"/>
+<path d="M90 178 L460 178 446 336 Q333 369 250 340 Q174 328 113 343Z" fill="url(#foam)"/>
+<ellipse cx="277" cy="179" rx="189" ry="52" fill="#f5e9da" stroke="#ead6c4" stroke-width="8"/>
+<ellipse cx="275" cy="181" rx="167" ry="36" fill="#fff9ea"/>
+<g fill="#a45d29" opacity=".67"><circle cx="180" cy="173" r="4"/><circle cx="200" cy="190" r="3"/><circle cx="260" cy="158" r="3"/><circle cx="312" cy="175" r="4"/><circle cx="345" cy="190" r="2"/><circle cx="271" cy="195" r="3"/><circle cx="305" cy="202" r="2"/></g>
+<g opacity=".32" fill="#523326"><path d="M169 351l29 -19 24 27 -26 30z"/><path d="M338 405l36 -12 20 35 -42 32z"/><path d="M248 549l25 -7 11 45 -36 8z"/><path d="M331 635l45 -25 19 28 -41 28z"/></g>
+<path d="M190 229 Q278 245 371 223 L352 324 Q268 343 214 320Z" fill="#ffffff" opacity=".17"/>
+<text x="275" y="470" font-family="Georgia" font-weight="bold" font-size="74" text-anchor="middle" fill="#4b1e16">seiyun</text>
+<text x="275" y="498" font-family="Arial" font-size="17" text-anchor="middle" letter-spacing="8" fill="#4b1e16">YEMENI COFFEE</text>
+<g transform="rotate(22 314 122)"><rect x="180" y="111" width="256" height="25" rx="12" fill="#9c512b"/><rect x="180" y="120" width="256" height="8" rx="4" fill="#b97c3d"/></g>
+</svg>
