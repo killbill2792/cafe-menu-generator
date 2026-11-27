@@ -83,6 +83,27 @@ anchor="      stopVersions?.();"
 assert anchor in s
 s=s.replace(anchor,anchor+"\n      stopSeiyun?.();")
 editor.write_text(s)
+
+# Native mobile shell: CSS grid auto minimums otherwise enlarge the entire
+# iframe to the intrinsic width of the topbar/rail. Keep every native control
+# accessible in its own scrollable toolbar; do not clip the artboard or
+# suppress overflow at the document root to hide a failing acceptance test.
+css=Path('apps/editor/src/styles/app.css')
+css.write_text(css.read_text()+"""
+@media (max-width: 760px) {
+  .editor { grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--top) minmax(0, 1fr) 62px; width: 100%; min-width: 0; }
+  .editor > .topbar, .editor > .rail, .editor > .workspace { min-width: 0; max-width: 100%; }
+  .topbar { overflow-x: auto; scrollbar-width: none; }
+  .topbar > * { flex-shrink: 0; }
+  .topbar .title { flex: 1 0 84px; min-width: 84px; }
+  .topbar .icon-btn[title^='Redo'] { display: inline-flex; }
+  .workspace .viewport { min-width: 0; max-width: 100%; }
+  .workspace .statusbar { min-width: 0; max-width: 100%; overflow-x: auto; }
+  .workspace .statusbar > * { flex-shrink: 0; }
+  .rail { max-width: 100%; min-width: 0; overflow-x: auto; }
+  .panel { box-sizing: border-box; max-width: 100%; }
+}
+""")
 PY
   npm ci --no-audit --no-fund
   npm --workspace @opentempl/editor run build
