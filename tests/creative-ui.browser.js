@@ -33,6 +33,28 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.goto(url,{waitUntil:'domcontentloaded'});
  await page.evaluate(()=>{draft=starter();render();});
  assert.equal(await page.locator('.cs-tab').count(),2,'exactly two top-level features');
+ // Full native editor replacement: the old grid/Moveable assertions below are
+ // valid only for legacy public artifacts. The new owner shell has its own
+ // native-app integration test in native/test-native.browser.js (both real apps).
+ if(await page.evaluate(()=>!!window.SeiyunNativeEditors)){
+  assert.equal(await page.locator('.cs-native-heading').count(),1,'native menu editor is the main owner view');
+  assert.equal(await page.locator('#nativeEditorFrame').count(),1,'a real full-sized native editor mount exists');
+  assert.equal(await page.locator('.cs-art-page').count(),0,'the broken custom HTML artboard is absent');
+  await page.screenshot({path:'artifacts/native-menu-shell.png',fullPage:true});
+  await page.locator('[data-cs-tab="showcase"]').click();
+  assert.equal(await page.locator('.cs-native-product-picker').count(),1,'explicit product/photo chooser is shown');
+  assert.equal(await page.locator('.cs-native-empty').count(),1,'no potentially wrong photo is auto-used');
+  await page.evaluate(src=>{draft.products[0].photos=[src];draft.products[0].primary=0;draft.showcaseArtwork={...draft.showcaseArtwork,productId:draft.products[0].id};render();},png);
+  assert.equal(await page.locator('[data-native-photo]').count(),1,'uploaded photo can be inspected');
+  await page.locator('[data-native-photo="0"]').click();
+  assert.equal(await page.locator('#nativeEditorFrame').count(),1,'native motion app is available after explicit photo approval');
+  assert.equal(await page.evaluate(()=>draft.nativeArtworks.approvedPhotos[draft.products[0].id].index),0,'approved photo is linked to the selected product ID');
+  await page.screenshot({path:'artifacts/native-motion-shell.png',fullPage:true});
+  assert.equal(errors.length,0,'no uncaught browser errors in the native shell');
+  console.log('NATIVE_OWNER_SHELL_BROWSER_PASSED: two native editors, explicit photo consent, no old artboard');
+  await browser.close();server.close();
+  return;
+ }
  assert.equal(await page.locator('.cs-design').count(),0,'template gallery hidden until chosen');
  await page.screenshot({path:'artifacts/menu-generator-desktop.png',fullPage:true});
  assert(await page.locator('.cs-art-page .mg-item').count()>0,'menu artboard visible immediately');

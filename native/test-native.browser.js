@@ -1,0 +1,165 @@
+/* Smoke test of full pinned native editors and their exact-origin owner data bridge. */
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict'),fs=require('fs'),http=require('http'),path=require('path');
+const root=path.resolve(__dirname,'../studio');
+const img='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGM83urOgA0wYRUdtBIAP0kBo91cRVwAAAAASUVORK5CYII=';
+const type={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.wasm':'application/wasm','.woff2':'font/woff2','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.glb':'model/gltf-binary'};
+const harness=['<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><header id="status">Starting…</header>',
+ '<iframe id="native" style="width:100%;height:90vh"></iframe><script>',
+ 'const mode=new URLSearchParams(location.search).get("mode")||"menu",nonce="test-"+mode;',
+ 'const frame=document.querySelector("iframe");let sent=false;',
+ 'frame.src="/native/"+mode+"/index.html?seiyun_nonce="+nonce+"&seiyun_owner=11111111-1111-4111-8111-111111111111";',
+ 'const cup=document.createElement("canvas");cup.width=240;cup.height=360;const c=cup.getContext("2d");const g=c.createLinearGradient(55,0,185,0);g.addColorStop(0,"#efc278");g.addColorStop(.55,"#bc792c");g.addColorStop(1,"#efa94f");c.fillStyle=g;c.beginPath();c.moveTo(41,72);c.lineTo(199,72);c.lineTo(175,320);c.quadraticCurveTo(120,340,65,320);c.closePath();c.fill();c.fillStyle="#fff0d1";c.beginPath();c.ellipse(120,73,79,25,0,0,Math.PI*2);c.fill();c.strokeStyle="#ad6b38";c.lineWidth=5;c.beginPath();c.moveTo(80,58);c.lineTo(158,76);c.stroke();c.fillStyle="#552918";c.font="bold 28px Georgia";c.textAlign="center";c.fillText("seiyun",120,195);const photo=cup.toDataURL("image/png");',
+ 'const prods=Array.from({length:26},(_,i)=>({id:"p"+i,name:"Seiyun Coffee "+i,ingredients:"cinnamon, milk, cardamom",enabled:true,category:"Coffee",photos:[photo],primary:0,sizes:[{name:"12 oz",price:7+i/10}]}));',
+ 'window.addEventListener("message",evt=>{if(evt.origin!==location.origin||evt.source!==frame.contentWindow||evt.data.nonce!==nonce)return;',
+ 'const msg=evt.data;if(msg.type==="SEIYUN_NATIVE_READY"&&!sent){sent=true;frame.contentWindow.postMessage({type:"SEIYUN_NATIVE_INIT",nonce,catalog:mode==="menu"?{brand:{name:"Seiyun Yemeni Coffee",tagline:"Yemeni Coffee"},products:prods,currency:"USD",templateId:"food-menu-cafe-nord"}:{brand:{name:"Seiyun Yemeni Coffee",accent:"#9b5837"},product:prods[0],photoUrl:photo,aspect:"portrait"}},location.origin);}',
+ 'if(msg.type==="SEIYUN_NATIVE_LOADED"){document.querySelector("#status").textContent="LOADED";document.querySelector("#status").dataset.layers=String(msg.layers??0);document.querySelector("#status").dataset.assets=String(msg.assets??0);}',
+ 'if(msg.type==="SEIYUN_NATIVE_ERROR")document.querySelector("#status").textContent="ERROR "+msg.error;',
+ 'if(msg.type==="SEIYUN_NATIVE_SAVE"){window.latestSnapshot=msg.snapshot;document.querySelector("#status").dataset.saved=msg.snapshot?"menu":"motion";}',
+ '});</script></body></html>'].join('\n');
+// Mirror the production Cloudflare _headers matching rules for this integration
+// test, including the native-specific override; a permissive test server would
+// otherwise miss a broken iframe CSP or inline Next hydration.
+const rules=fs.readFileSync(path.join(root,'_headers'),'utf8').split(/\r?\n/);
+function securityHeaders(pathname){
+ const headers={};let matched=false;
+ for(const line of rules){
+  if(!line.trim()||line.trim().startsWith('#'))continue;
+  if(!/^\s/.test(line)){const pattern=line.trim();matched=pattern.endsWith('*')?pathname.startsWith(pattern.slice(0,-1)):pattern===pathname;continue;}
+  if(!matched)continue;
+  const v=line.trim();if(v.startsWith('! ')){delete headers[v.slice(2).toLowerCase()];continue;}
+  const i=v.indexOf(':');if(i<0)continue;const k=v.slice(0,i).toLowerCase(),value=v.slice(i+1).trim();
+  headers[k]=headers[k]?headers[k]+', '+value:value;
+ }
+ return headers;
+}
+const server=http.createServer((req,res)=>{
+ const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+ if(pathname==='/native-harness'){res.writeHead(200,{'content-type':'text/html'});res.end(harness);return;}
+ const filepath=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
+ if(!filepath.startsWith(root+path.sep)){res.writeHead(403);res.end('forbidden');return;}
+ fs.readFile(filepath,(err,data)=>{
+  if(err){res.writeHead(404);res.end('not found');return;}
+  res.writeHead(200,{...securityHeaders(pathname),'content-type':type[path.extname(filepath)]||'application/octet-stream','access-control-allow-origin':'*'});res.end(data);
+ });
+});
+let browserInstance;
+(async()=>{
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const origin='http://127.0.0.1:'+server.address().port;
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});browserInstance=browser;
+ const shots=path.resolve(__dirname,'../artifacts');fs.mkdirSync(shots,{recursive:true});
+ for(const mode of ['menu','motion']){
+  const context=await browser.newContext({viewport:{width:1366,height:820}});
+  const page=await context.newPage();page.setDefaultTimeout(12000);const errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(origin+'/native-harness?mode='+mode);
+  await page.waitForFunction(()=>document.querySelector('#status').textContent==='LOADED',{timeout:90000});
+  await page.waitForTimeout(800);
+  const frame=page.frameLocator('#native');
+  const fullText=await frame.locator('body').innerText();
+  assert(fullText.length>100,mode+' native editor should be a complete app, not a blank shell');
+  if(mode==='menu'){
+   assert(/Seiyun Yemeni Coffee/.test(fullText),'OpenTempl must include current owner branding');
+   assert(/Seiyun Coffee 0/.test(fullText),'OpenTempl must bind real product names');
+   const item=frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).first();
+   await item.waitFor({timeout:15000});
+   await item.click({force:true});
+   await page.keyboard.press('Delete');
+   await page.waitForTimeout(180);
+   assert.equal(await frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).count(),0,
+     'delete must remove an actual native object, not just move it off the page');
+   await page.keyboard.press('Control+z');
+   await frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).first().waitFor({timeout:10000});
+   await page.waitForTimeout(1350);
+   assert.equal(await page.locator('#status').getAttribute('data-saved'),'menu',
+     'native Yjs editor changes must reach the private artwork draft bridge');
+   const snapshot=await page.evaluate(()=>window.latestSnapshot);
+   assert(snapshot&&snapshot.pageOrder.length>0,'menu snapshot exists');
+   const names=Object.values(snapshot.elements).filter(e=>e.type==='text'&&/^product:p\d+:name$/.test(e.name||''));
+   assert.equal(new Set(names.map(e=>e.name)).size,26,'all 26 products must have native text layers, with no omitted products');
+   assert(snapshot.pageOrder.every(p=>snapshot.pages[p].notes.includes('Source-native menu')),'dedicated source template must preserve the source document instead of generating generic cards');
+   assert.equal(snapshot.meta.width,794,'native original menu dimensions must be preserved');
+   await frame.locator('img[data-owner-preview]').first().waitFor({state:'visible',timeout:45000});
+   const preview=frame.locator('img[data-owner-preview]').first();
+   assert(await preview.evaluate(el=>el.complete&&el.naturalWidth>0),'actual populated owner template preview must render');
+   await page.screenshot({path:path.join(shots,'native-menu-gallery.png'),fullPage:true});
+   // Actual native export, not a download test of the old CSS renderer.
+   await frame.getByRole('button',{name:'Export',exact:true}).click();
+   const exportDialog=frame.getByRole('dialog',{name:'Export',exact:true});
+   await exportDialog.locator('.format-card').filter({hasText:'PDF'}).click();
+   const pdf=page.waitForEvent('download',{timeout:90000});
+   await exportDialog.getByRole('button',{name:'Download PDF',exact:true}).click();
+   const file=await pdf;const pdfBytes=fs.readFileSync(await file.path());
+   assert(pdfBytes.subarray(0,5).toString()==='%PDF-'&&pdfBytes.length>1000,'actual native PDF is valid');
+   await file.saveAs(path.join(shots,'native-menu.pdf'));
+   console.log('NATIVE_MENU_PDF_BYTES',pdfBytes.length);
+   const close=exportDialog.getByRole('button',{name:'Close',exact:true});
+   if(await close.isVisible())await close.click();
+
+
+  }
+  if(mode==='motion'){
+   assert(/Library|Presets|Templates/i.test(fullText),'Native motion editor includes a real browsable library');
+   const layers=Number(await page.locator('#status').getAttribute('data-layers'));
+   const assets=Number(await page.locator('#status').getAttribute('data-assets'));
+   assert(layers>=3,'A new ad must have independent hero, brand, and product-detail tracks in the upstream native timeline');
+   assert.equal(assets,3,'Native scene must contain the approved product photo and two catalog-generated caption assets, not upstream samples');
+   assert(!/NaN/.test(fullText),'Native motion controls cannot show NaN after media import');
+   await frame.locator('canvas.stage-canvas').waitFor({state:'visible',timeout:25000});
+   const stage=frame.locator('canvas.stage-canvas');
+   const first=await stage.screenshot();
+   await page.waitForTimeout(1100);
+   const second=await stage.screenshot();
+   assert(!first.equals(second),'actual native canvas must change over time');
+   await page.screenshot({path:path.join(shots,'native-motion-desktop.png'),fullPage:true});
+   await frame.getByRole('button',{name:'Export',exact:true}).click();
+   const dialog=frame.locator('.export-modal');
+   await dialog.getByRole('button',{name:'GIF',exact:true}).click();
+   await dialog.getByRole('button',{name:'720p',exact:true}).click();
+   await dialog.locator('.export-primary-action').click();
+   const link=dialog.locator('.export-done a[download]').first();
+   await link.waitFor({timeout:240000});
+   const gif=page.waitForEvent('download',{timeout:30000});
+   await link.click();
+   const file=await gif;const bytes=fs.readFileSync(await file.path());
+   assert(/^GIF8[79]a$/.test(bytes.subarray(0,6).toString())&&bytes.length>1000,'native animated GIF export is real');
+   await file.saveAs(path.join(shots,'native-motion.gif'));
+   console.log('NATIVE_MOTION_GIF_BYTES',bytes.length);
+   const close=dialog.locator('button.icon-btn').last();if(await close.isVisible())await close.click();
+
+
+  }
+  if(mode==='menu')await page.screenshot({path:path.join(shots,'native-'+mode+'-desktop.png'),fullPage:true});
+  assert(!errors.some(s=>/Cannot read properties of undefined|Hydration failed|Uncaught TypeError/i.test(s)),mode+' critical JS errors: '+errors.slice(0,3));
+  await context.close();
+ }
+ // Mobile layouts use the upstream editors' own touch UI, not our CSS-grid canvas.
+ for(const mode of ['menu','motion']){
+   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+   const page=await context.newPage();page.setDefaultTimeout(12000);
+   console.log('NATIVE_MOBILE_TEST_START',mode);
+   await page.goto(origin+'/native-harness?mode='+mode);
+   await page.waitForFunction(()=>document.querySelector('#status').textContent==='LOADED',{timeout:60000});
+   const frame=page.frameLocator('#native');
+   if(mode==='motion'){
+     await frame.locator('canvas.stage-canvas').waitFor({state:'visible',timeout:30000});
+     await page.waitForTimeout(1500);
+     const body=await frame.locator('body').innerText();
+     assert(body.length>40,'motion mobile native workspace must finish mounting, not just send a ready message');
+   }
+   const overflow=await frame.locator('body').evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+   await page.screenshot({path:path.join(shots,'native-'+mode+'-mobile.png'),fullPage:false});
+   if(overflow>=30) console.log('NATIVE_OVERFLOW',await frame.locator('body').evaluate(()=>Array.from(document.querySelectorAll('*')).filter(e=>{const r=e.getBoundingClientRect();return r.right>innerWidth+10&&r.width>50;}).slice(0,20).map(e=>({tag:e.tagName,cls:String(e.className).slice(0,150),width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right}))));
+   assert(overflow<30,mode+' native touch viewport should not overflow horizontally: '+overflow);
+   if(mode==='menu'){
+     const item=frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).first();
+     await item.waitFor({timeout:12000});
+     await item.tap({force:true,timeout:8000});
+   }
+   await page.screenshot({path:path.join(shots,'native-'+mode+'-mobile.png'),fullPage:false});
+   await context.close();
+ }
+ await browser.close();server.close();
+ console.log('NATIVE_REAL_EDITORS_BROWSER_PASSED: owner catalog and full native motion library loaded');
+})().catch(async e=>{console.error('NATIVE_BROWSER_ACCEPTANCE_FAILURE',e);try{await browserInstance?.close()}catch{}server.close();process.exit(1);});

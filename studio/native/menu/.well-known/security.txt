@@ -1,0 +1,5 @@
+Contact: https://github.com/noah-thing/opentempl/security/advisories/new
+Expires: 2027-11-15T00:00:00.000Z
+Preferred-Languages: en, sv
+Canonical: https://opentempl.org/.well-known/security.txt
+Policy: https://github.com/noah-thing/opentempl/blob/main/SECURITY.md

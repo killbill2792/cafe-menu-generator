@@ -1,0 +1,78 @@
+name: Build full native OpenTempl and Motion Studio editors
+on:
+  push:
+    branches:
+      - feat/native-opentempl-motion-studio
+    paths:
+      - 'native/**'
+      - '.github/workflows/native-editors.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: native-editors-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build both complete pinned native editor apps and inject limited data bridge
+        run: bash native/build-native.sh
+      - name: Audit static bundles, licenses, cross-window API and Cloudflare per-file limits
+        run: node native/verify-built.js studio/native
+      - name: Install Chromium for native-editor integration checks
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium
+      - name: Open BOTH real editors in Chromium with a 26-product café catalog
+        run: node native/test-native.browser.js
+      - name: Upload native owner-canvas screenshots for visual review
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-editor-browser-previews
+          path: |
+            artifacts/native-*.png
+            artifacts/native-*.pdf
+            artifacts/native-*.gif
+          if-no-files-found: ignore
+      - name: Upload complete built editors and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-opentempl-and-motion-studio-built
+          path: studio/native
+          retention-days: 5
+      - name: Publish the validated native bundles on the latest feature-branch head
+        shell: bash
+        run: |
+          set -euo pipefail
+          tempdir=$(mktemp -d)
+          cp -a studio/native "$tempdir/native"
+          git fetch origin feat/native-opentempl-motion-studio
+          if [ "$(git rev-parse origin/feat/native-opentempl-motion-studio)" != "$GITHUB_SHA" ]; then
+            echo "Ref changed during validation; refusing to publish stale native bundles."
+            exit 1
+          fi
+          git reset --hard "$GITHUB_SHA"
+          rm -rf studio/native
+          cp -a "$tempdir/native" studio/native
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'
+          git add -A studio/native
+          if git diff --cached --quiet; then
+            echo 'Native source bundle is already current'
+          else
+            git commit -m 'build(native): vendor complete pinned native editors [skip ci]'
+            git push origin HEAD:feat/native-opentempl-motion-studio
+          fi

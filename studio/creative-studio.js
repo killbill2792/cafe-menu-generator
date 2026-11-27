@@ -133,6 +133,14 @@ function renderCreative(){
  if(!draft||!Array.isArray(draft.products))return;
  if(!['menu','showcase'].includes(tab))tab='menu';
  window.SeiyunShowcase?.destroy?.();
+ // Full upstream application shells replace the former CSS+Moveable and
+ // five hand-coded showcase scenes. Keep old renderers only for public TV URLs.
+ if(window.SeiyunNativeEditors){
+  const stage=$('#app');
+  stage.innerHTML=shell(window.SeiyunNativeEditors.content(tab,draft,core));
+  window.SeiyunNativeEditors.mount(draft,tab,core,save);
+  return;
+ }
  if(tab==='menu'&&window.SeiyunTemplateFonts){
   const sources=[...(window.SeiyunOpenMenuPack||[]),...(window.SeiyunCanvixMenuPack||[])];
   const selectedDesign=config().templateId||'';
