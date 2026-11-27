@@ -2,7 +2,7 @@
 (function(root,make){const api=make();root.SeiyunLayoutEditor=api;})(typeof window!=='undefined'?window:globalThis,function(){
 'use strict';
 let active=null,moveable=null,handler=null;
-const diagnostics={selects:0,dragStarts:0,drags:0,dragEnds:0,lastKey:'',lastDist:[]};
+const diagnostics={selects:0,dragStarts:0,drags:0,dragEnds:0,resizeStarts:0,resizes:0,resizeEnds:0,lastSize:[],lastKey:'',lastDist:[]};
 const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
 const number=(v,d)=>Number.isFinite(Number(v))?Number(v):d;
 const layoutCore=()=>window.SeiyunLayoutCore;
@@ -93,8 +93,9 @@ function select(el){
   moveable?.updateRect();
  });
  moveable.on('dragEnd',()=>{diagnostics.dragEnds++;commit();});
- moveable.on('resizeStart',()=>{startBox=nativeBox(el);startLayer=readLayer();dirty=false;});
+ moveable.on('resizeStart',()=>{diagnostics.resizeStarts++;startBox=nativeBox(el);startLayer=readLayer();dirty=false;});
  moveable.on('resize',e=>{
+  diagnostics.resizes++;diagnostics.lastSize=[e.width,e.height];
   const factor=number(e.width,startBox.w)/Math.max(1,startBox.w);
   if(a.mode==='showcase'){
    if(!['hero','title'].includes(key))return;
@@ -111,7 +112,7 @@ function select(el){
   }
   moveable?.updateRect();
  });
- moveable.on('resizeEnd',commit);
+ moveable.on('resizeEnd',()=>{diagnostics.resizeEnds++;commit();});
  return moveable;
 }
 return {attach,detach,select,diagnostics};
