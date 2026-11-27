@@ -53,7 +53,7 @@ test('layout size overrides change export geometry and clamp impossible input',(
 });
 
 test('native image slots use real owner photos, remain selectable and honor zoom without crop',()=>{
- const t=pack.find(x=>x.id==='food-menu-cafe-nord'),state=create(4);
+ const t=pack.find(x=>x.id==='stationery-arch-menu'),state=create(4);
  state.menuArtwork={photoTransformByProduct:{'drink-0':{zoom:165,x:14,y:-6}}};
  const h=adapter.render(state,t).pages.join('');
  assert(h.includes('data-cs-photo="drink-0"'));
