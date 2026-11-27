@@ -153,7 +153,30 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await popup.waitForLoadState('domcontentloaded');
  assert.equal(await popup.locator('[data-opentempl-source]').count(),1,'PDF/Print popup preserves imported template');
  assert.equal(await popup.locator('[data-menu-product]').count(),2,'PDF/Print popup uses owner product data');
+ const pdfBytes=await popup.pdf({printBackground:true,preferCSSPageSize:true});
+ assert(pdfBytes.subarray(0,4).toString()==='%PDF','print document is an actual readable PDF, not only a popup');
+ assert(pdfBytes.length>5000,'PDF contains rendered source menu objects');
  await popup.close();
+ // A complete multi-page menu must download every page in the same source style.
+ await page.evaluate(()=>{
+  draft.products=starter().products;
+  draft.menuArtwork={...draft.menuArtwork,templateId:'opentempl:food-menu-cafe-nord',format:'a4'};
+  render();
+ });
+ const full=await page.evaluate(()=>SeiyunMenuGallery.renderPages(draft,SeiyunMenuGallery.getSettings(draft)));
+ assert(full.pageCount>1,'full owner catalog spans multiple native menu pages');
+ assert(full.pages.every(x=>x.includes('ot-source-page')),'all full-menu pages retain selected source design');
+ const fullZip=page.waitForEvent('download',{timeout:90000});
+ await page.locator('[data-cs-action="png"]').click();
+ const zipDownload=await fullZip,zipRaw=fs.readFileSync(await zipDownload.path());
+ assert(zipRaw.subarray(0,4).equals(Buffer.from([80,75,3,4])),'multi-page raster export downloads a ZIP');
+ const archive=await require('jszip').loadAsync(zipRaw);
+ const allPngs=Object.keys(archive.files).filter(x=>x.endsWith('.png'));
+ assert.equal(allPngs.length,full.pageCount,'raster ZIP contains every native menu page');
+ for(const item of allPngs){const bytes=await archive.files[item].async('nodebuffer');assert(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])));}
+ await page.locator('[data-cs-action="next"]').click();
+ await page.screenshot({path:'artifacts/native-menu-overflow-page.png',fullPage:true});
+ assert(await page.locator('#csArtPage .ot-source-page').count()===1,'second page remains an authentic chosen template');
  assert.deepEqual(errors,[],'no uncaught browser exceptions');
  const mobile=await browser.newPage({viewport:{width:390,height:800},hasTouch:true,isMobile:true,deviceScaleFactor:1});
  await mobile.route('**/cloud.js',route=>route.fulfill({contentType:'application/javascript',body:'window.SEIYUN_CONFIG={};window.seiyunCloud=null;'}));
