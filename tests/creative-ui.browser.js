@@ -55,7 +55,18 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  const data=fs.readFileSync(await download.path());
  assert.equal(data.subarray(0,6).toString(),'GIF89a','download is a valid GIF');
  assert(data.byteLength>2048,'GIF contains frames and image data');
- console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','24 gallery options','template switch','live Motion Lab frames','motion selection','GIF download'],gifBytes:data.byteLength,pageErrors:errors}));
+ let videoBytes=0,videoType='';
+ const supports=await page.evaluate(()=>typeof MediaRecorder==='function'&&!!HTMLCanvasElement.prototype.captureStream&&!!SeiyunCreativeCore.recordingFormat(mime=>MediaRecorder.isTypeSupported(mime)));
+ if(supports){
+   const videoDownload=page.waitForEvent('download',{timeout:45000});
+   await page.locator('[data-cs-action="video"]').click();
+   const v=await videoDownload;
+   const bytes=fs.readFileSync(await v.path());
+   videoBytes=bytes.length;videoType=v.suggestedFilename();
+   assert(bytes.length>1000,'video contains actual encoded frames');
+   assert(/\\.(mp4|webm)$/.test(videoType),'native video extension is accurate');
+ }
+ console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','24 gallery options','template switch','live Motion Lab frames','motion selection','GIF download',...(supports?['native video export']:[])],gifBytes:data.byteLength,videoBytes,videoType,pageErrors:errors}));
  assert.deepEqual(errors,[],'no uncaught browser exceptions');
  const mobile=await browser.newPage({viewport:{width:390,height:800}});
  await mobile.route('**/cloud.js',route=>route.fulfill({contentType:'application/javascript',body:'window.SEIYUN_CONFIG={};window.seiyunCloud=null;'}));
