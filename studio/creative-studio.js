@@ -14,7 +14,7 @@ const save=()=>{saveSoon();const v=$('#draftStatus');if(v)v.textContent='Saving 
 const notify=(m,bad)=>{const v=$('#csMessage');if(v)v.textContent=m;if(bad&&typeof toasts==='function')toasts(m,true)};
 function shell(body){
  const links=core.ownerNavigation().map(n=>'<button class="cs-tab '+(tab===n.id?'active':'')+'" data-cs-tab="'+n.id+'">'+(n.id==='menu'?'▦':'▶')+' '+esc(n.label)+'</button>').join('');
- return '<div class="cs-app"><header class="cs-header"><div class="cs-brandmark">s.</div><div class="cs-title"><strong>Seiyun Creative Studio</strong><small>Create once. Use anywhere.</small></div><nav class="cs-tabs" aria-label="Creative tools">'+links+'</nav><span id="draftStatus" class="cs-save-state">Your draft</span></header><main class="cs-main">'+body+'</main><div id="toast" class="toast"></div><input hidden type="file" id="productImage" multiple accept="image/*,.heic,.heif"><input hidden type="file" id="csLogoFile" accept="image/png,image/jpeg,image/webp,image/avif"></div>';
+ return '<div class="cs-app"><header class="cs-header"><div class="cs-brandmark">s.</div><div class="cs-title"><strong>Seiyun Creative Studio</strong><small>Create once. Use anywhere.</small></div><nav class="cs-tabs" aria-label="Creative tools">'+links+'</nav><span id="draftStatus" class="cs-save-state">Your draft</span><button class="cs-account" data-cs-action="signout" title="Sign out">Sign out</button></header><main class="cs-main">'+body+'</main><div id="toast" class="toast"></div><input hidden type="file" id="productImage" multiple accept="image/*,.heic,.heif"><input hidden type="file" id="csLogoFile" accept="image/png,image/jpeg,image/webp,image/avif"></div>';
 }
 function brandPanel(){
  const b=branding();
@@ -108,6 +108,7 @@ function dataClick(ev){
  if(cmd==='close-photo'){photoId='';render();return;}
  if(cmd==='prev'||cmd==='next'){page+=cmd==='next'?1:-1;refreshMenu();return;}
  if(cmd==='reset-photo'){core.updatePhotoTransform(draft,photoId,{zoom:100,x:0,y:0});save();render();return;}
+ if(cmd==='signout'){Promise.resolve(window.seiyunCloud?.signOut?.()).then(()=>location.reload()).catch(e=>notify('Sign out failed: '+e.message,true));return;}
  if(cmd==='upload-logo'){$('#csLogoFile')?.click();return;}
  if(cmd==='ad-upload'){const p=core.chooseProduct(draft,showcase().productId);if(p){selected=p.id;window.seiyunUploadDestination='showcase';$('#productImage')?.click();}else notify('Add a product before uploading.',true);return;}
  if(cmd==='add-drink'){draft.products.push({id:uid(),name:'New drink',category:'Other',description:'',ingredients:'',photos:[],primary:0,enabled:true,sizes:[{id:uid(),name:'Regular',price:0}]});page=999;save();render();return;}
