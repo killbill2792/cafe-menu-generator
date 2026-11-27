@@ -89,7 +89,7 @@ function thumbnailHTML(state,t){
  const markup=rendered.pages[0]||'';
  const w=FORMATS[fmt]?.w||816,h=FORMATS[fmt]?.h||1056;
  const scale=Math.min(156/w,185/h);
- return '<span class="cs-live-thumb" role="img" aria-label="Real preview of '+esc(t.title)+'"><span class="cs-live-thumb-sheet" style="width:'+w+'px;height:'+h+'px;transform:translateX(-50%) scale('+scale.toFixed(5)+')">'+markup+'</span></span>';
+ return '<span class="cs-live-thumb" role="img" aria-label="Real preview of '+esc(t.title)+'"><span class="cs-live-thumb-sheet" style="width:'+w+'px;height:'+h+'px;margin-left:'+(-(w*scale/2)).toFixed(2)+'px;transform:scale('+scale.toFixed(5)+')">'+markup+'</span></span>';
 }
 function galleryCard(t,settings){const l=LOOK.find(x=>x.id===t.tone),f=FAMILY.find(x=>x.id===t.layout);
 const sample=productsOf(getDraft()||{}).slice(0,3),sampleP=sample.find(x=>x.photo)||sample[0],miniPhoto=sampleP?.photo?'<img src="'+esc(sampleP.photo)+'" alt="" loading="lazy">':'<span>☕</span>';
