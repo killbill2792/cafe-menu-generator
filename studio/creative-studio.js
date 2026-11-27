@@ -47,7 +47,7 @@ function templateTiles(){
 function menuUI(){
  const lib=window.SeiyunMenuGallery,opts=lib.getSettings(draft),data=lib.renderPages(draft,opts);
  page=Math.max(0,Math.min(data.pageCount-1,page));
- return '<div class="cs-intro"><div><small>MENU GENERATOR</small><h1>Make your menu yours.</h1><p>Your café information is already here. Tap text or a card directly to edit, drag and resize it. Your download uses the same layout.</p></div><div class="cs-actions"><button class="cs-btn" data-cs-action="designs">Browse '+lib.registry.length+' designs</button><button class="cs-btn" data-cs-action="brand">Customize brand</button></div></div>'+
+ return '<div class="cs-intro"><div><small>MENU GENERATOR</small><h1>Make your menu yours.</h1><p>Your café information is already here. Tap once to select and drag. Double-tap text to change the words. Resize using the corner handles; downloads keep your edits.</p></div><div class="cs-actions"><button class="cs-btn" data-cs-action="designs">Browse '+lib.registry.length+' designs</button><button class="cs-btn" data-cs-action="brand">Customize brand</button></div></div>'+
  (templatesOpen?'<section class="cs-designs"><div class="cs-panel-head"><strong>Choose your menu design</strong><button data-cs-action="designs">×</button></div><input id="csDesignSearch" type="search" placeholder="Search designs" value="'+esc(search)+'"><div class="cs-design-grid">'+templateTiles()+'</div></section>':'')+
  brandPanel()+
  '<section class="cs-workspace"><div class="cs-toolbar"><label>Format <select id="csFormat">'+Object.entries(lib.formats).map(([v,o])=>'<option value="'+v+'" '+(opts.format===v?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select></label><span id="csItems">'+data.productCount+' items · '+data.pageCount+' pages</span><div class="cs-actions"><button class="cs-btn" data-cs-action="add-drink">+ Product</button><button class="cs-btn" data-cs-action="pdf">PDF / Print</button><button class="cs-btn primary" data-cs-action="png">Download PNG</button><button class="cs-btn" data-cs-action="jpg">JPG</button></div></div>'+
@@ -142,9 +142,13 @@ function dataClick(ev){
  if(['video','gif','cutout','still'].includes(cmd)){b.disabled=true;const fn=cmd==='video'?'downloadVideo':cmd==='gif'?'downloadGif':cmd==='still'?'downloadStill':'removeWhiteBackground';Promise.resolve(window.SeiyunShowcase?.[fn]?.(draft,showcase(),core)).then(result=>{if(result?.message)notify(result.message);if(result?.updated){save();render();}}).catch(e=>notify(e.message||String(e),true)).finally(()=>b.disabled=false);}
 }
 document.addEventListener('click',dataClick,true);
+let csLastEditTarget=null,csLastEditTap=0;
 document.addEventListener('click',ev=>{
  const el=ev.target.closest('[data-cs-edit]');if(!el||el.isContentEditable||!isOwnerRoute())return;
  ev.preventDefault();ev.stopImmediatePropagation();
+ const now=Date.now();
+ if(el!==csLastEditTarget||now-csLastEditTap>650){csLastEditTarget=el;csLastEditTap=now;return;}
+ csLastEditTarget=null;csLastEditTap=0;
  const original=el.textContent;el.contentEditable='true';el.setAttribute('role','textbox');el.focus();
  el.addEventListener('blur',()=>{
   const field=el.dataset.csEdit,id=el.dataset.csProductId||el.closest('[data-menu-product]')?.dataset.menuProduct||showcase().productId;
