@@ -203,5 +203,8 @@ export function watchSeiyunDoc(doc:DesignDoc) {
  }catch{/* Native IndexedDB always remains the local fallback. */}};
  const handler=()=>{clearTimeout(saveTimer);saveTimer=setTimeout(flush,1100);};
  doc.ydoc.on('update',handler);
+ // A newly chosen native template is already a meaningful new design: save its
+ // initial document even if the owner has not dragged a single object yet.
+ saveTimer=setTimeout(flush,500);
  return()=>{clearTimeout(saveTimer);doc.ydoc.off('update',handler);flush();};
 }
