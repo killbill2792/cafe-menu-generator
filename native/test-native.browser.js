@@ -9,13 +9,13 @@ const harness=['<!doctype html><html><head><meta charset="utf-8"><meta name="vie
  'const mode=new URLSearchParams(location.search).get("mode")||"menu",nonce="test-"+mode;',
  'const frame=document.querySelector("iframe");let sent=false;',
  'frame.src="/native/"+mode+"/index.html?seiyun_nonce="+nonce+"&seiyun_owner=11111111-1111-4111-8111-111111111111";',
- 'const photo='+JSON.stringify(img)+';',
+ 'const cup=document.createElement("canvas");cup.width=240;cup.height=360;const c=cup.getContext("2d");const g=c.createLinearGradient(55,0,185,0);g.addColorStop(0,"#efc278");g.addColorStop(.55,"#bc792c");g.addColorStop(1,"#efa94f");c.fillStyle=g;c.beginPath();c.moveTo(41,72);c.lineTo(199,72);c.lineTo(175,320);c.quadraticCurveTo(120,340,65,320);c.closePath();c.fill();c.fillStyle="#fff0d1";c.beginPath();c.ellipse(120,73,79,25,0,0,Math.PI*2);c.fill();c.strokeStyle="#ad6b38";c.lineWidth=5;c.beginPath();c.moveTo(80,58);c.lineTo(158,76);c.stroke();c.fillStyle="#552918";c.font="bold 28px Georgia";c.textAlign="center";c.fillText("seiyun",120,195);const photo=cup.toDataURL("image/png");',
  'const prods=Array.from({length:26},(_,i)=>({id:"p"+i,name:"Seiyun Coffee "+i,ingredients:"cinnamon, milk, cardamom",enabled:true,category:"Coffee",photos:[photo],primary:0,sizes:[{name:"12 oz",price:7+i/10}]}));',
  'window.addEventListener("message",evt=>{if(evt.origin!==location.origin||evt.source!==frame.contentWindow||evt.data.nonce!==nonce)return;',
  'const msg=evt.data;if(msg.type==="SEIYUN_NATIVE_READY"&&!sent){sent=true;frame.contentWindow.postMessage({type:"SEIYUN_NATIVE_INIT",nonce,catalog:mode==="menu"?{brand:{name:"Seiyun Yemeni Coffee",tagline:"Yemeni Coffee"},products:prods,currency:"USD",templateId:"food-menu-cafe-nord"}:{brand:{name:"Seiyun Yemeni Coffee",accent:"#9b5837"},product:prods[0],photoUrl:photo,aspect:"portrait"}},location.origin);}',
  'if(msg.type==="SEIYUN_NATIVE_LOADED"){document.querySelector("#status").textContent="LOADED";document.querySelector("#status").dataset.layers=String(msg.layers??0);document.querySelector("#status").dataset.assets=String(msg.assets??0);}',
  'if(msg.type==="SEIYUN_NATIVE_ERROR")document.querySelector("#status").textContent="ERROR "+msg.error;',
- 'if(msg.type==="SEIYUN_NATIVE_SAVE")document.querySelector("#status").dataset.saved=msg.snapshot?"menu":"motion";',
+ 'if(msg.type==="SEIYUN_NATIVE_SAVE"){window.latestSnapshot=msg.snapshot;document.querySelector("#status").dataset.saved=msg.snapshot?"menu":"motion";}',
  '});</script></body></html>'].join('\n');
 // Mirror the production Cloudflare _headers matching rules for this integration
 // test, including the native-specific override; a permissive test server would
@@ -54,7 +54,7 @@ let browserInstance;
   const page=await context.newPage();page.setDefaultTimeout(12000);const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/native-harness?mode='+mode);
-  await page.waitForFunction(()=>document.querySelector('#status').textContent==='LOADED',{timeout:60000});
+  await page.waitForFunction(()=>document.querySelector('#status').textContent==='LOADED',{timeout:90000});
   await page.waitForTimeout(800);
   const frame=page.frameLocator('#native');
   const fullText=await frame.locator('body').innerText();
@@ -74,6 +74,13 @@ let browserInstance;
    await page.waitForTimeout(1350);
    assert.equal(await page.locator('#status').getAttribute('data-saved'),'menu',
      'native Yjs editor changes must reach the private artwork draft bridge');
+   const snapshot=await page.evaluate(()=>window.latestSnapshot);
+   assert(snapshot&&snapshot.pageOrder.length>0,'menu snapshot exists');
+   const names=Object.values(snapshot.elements).filter(e=>e.type==='text'&&/^product:p\d+:name$/.test(e.name||''));
+   assert.equal(new Set(names.map(e=>e.name)).size,26,'all 26 products must have native text layers, with no omitted products');
+   assert(snapshot.pageOrder.every(p=>snapshot.pages[p].notes.includes('Source-native menu')),'dedicated source template must preserve the source document instead of generating generic cards');
+   assert.equal(snapshot.meta.width,794,'native original menu dimensions must be preserved');
+
   }
   if(mode==='motion'){
    assert(/Library|Presets|Templates/i.test(fullText),'Native motion editor includes a real browsable library');
@@ -82,6 +89,13 @@ let browserInstance;
    assert(layers>=1,'The selected drink must have at least one actual upstream native timeline layer; a blank media library is not acceptable');
    assert(assets>=1,'The owner-approved product photo must be imported as an upstream native media asset');
    assert(!/NaN/.test(fullText),'Native motion controls cannot show NaN after media import');
+   await frame.locator('canvas.stage-canvas').waitFor({state:'visible',timeout:25000});
+   const stage=frame.locator('canvas.stage-canvas');
+   const first=await stage.screenshot();
+   await page.waitForTimeout(1100);
+   const second=await stage.screenshot();
+   assert(!first.equals(second),'actual native canvas must change over time');
+
   }
   await page.screenshot({path:path.join(shots,'native-'+mode+'-desktop.png'),fullPage:true});
   assert(!errors.some(s=>/Cannot read properties of undefined|Hydration failed|Uncaught TypeError/i.test(s)),mode+' critical JS errors: '+errors.slice(0,3));
@@ -95,6 +109,12 @@ let browserInstance;
    await page.goto(origin+'/native-harness?mode='+mode);
    await page.waitForFunction(()=>document.querySelector('#status').textContent==='LOADED',{timeout:60000});
    const frame=page.frameLocator('#native');
+   if(mode==='motion'){
+     await frame.locator('canvas.stage-canvas').waitFor({state:'visible',timeout:30000});
+     await page.waitForTimeout(1500);
+     const body=await frame.locator('body').innerText();
+     assert(body.length>40,'motion mobile native workspace must finish mounting, not just send a ready message');
+   }
    const overflow=await frame.locator('body').evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
    await page.screenshot({path:path.join(shots,'native-'+mode+'-mobile.png'),fullPage:false});
    if(overflow>=30) console.log('NATIVE_OVERFLOW',await frame.locator('body').evaluate(()=>Array.from(document.querySelectorAll('*')).filter(e=>{const r=e.getBoundingClientRect();return r.right>innerWidth+10&&r.width>50;}).slice(0,20).map(e=>({tag:e.tagName,cls:String(e.className).slice(0,150),width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right}))));
