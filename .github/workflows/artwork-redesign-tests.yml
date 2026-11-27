@@ -1,0 +1,35 @@
+name: Real menu and cinematic scene tests
+on:
+  push:
+    branches: [feat/real-template-browser-cinematic-hero, main]
+    paths:
+      - 'studio/vendor/opentempl/**'
+      - 'studio/open-template-adapter.js'
+      - 'studio/cinematic-scenes.*'
+      - 'studio/creative-studio.*'
+      - 'studio/creative-showcase.js'
+      - 'studio/creative-layout-editor.js'
+      - 'studio/menu-gallery.*'
+      - 'tests/open-template-adapter.test.js'
+      - 'tests/cinematic-scenes.test.js'
+      - 'tests/creative-ui.browser.js'
+      - '.github/workflows/artwork-redesign-tests.yml'
+  pull_request:
+    branches: [main]
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/open-template-adapter.test.js tests/cinematic-scenes.test.js
+  integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/creative-core.test.js tests/menu-gallery.test.js
