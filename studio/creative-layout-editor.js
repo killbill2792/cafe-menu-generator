@@ -95,26 +95,6 @@ function select(el){
   moveable?.updateRect();
  });
  moveable.on('dragEnd',()=>{diagnostics.dragEnds++;commit();});
- moveable.on('resizeStart',()=>{diagnostics.resizeStarts++;startBox=nativeBox(el);startLayer=readLayer();dirty=false;});
- moveable.on('resize',e=>{
-  diagnostics.resizes++;diagnostics.lastSize=[e.width,e.height];
-  const factor=number(e.width,startBox.w)/Math.max(1,startBox.w);
-  if(a.mode==='showcase'){
-   if(!['hero','title'].includes(key))return;
-   const prev=startLayer||{scale:1,fontSize:48};
-   saveScene({scale:clamp(prev.scale*factor,.4,2.6),fontSize:key==='title'?clamp(prev.fontSize*factor,18,150):prev.fontSize});
-   dirty=true;
-  }else{
-   // Moveable's resize width/height are target CSS layout pixels, even when the
-   // ancestor artboard is visually scaled. Dividing here by the preview scale
-   // would double-enlarge the saved geometry.
-   saveMenu({...startBox,w:clamp(number(e.width,startBox.w),24,native.w),h:clamp(number(e.height,startBox.h),20,native.h),
-     fontSize:clamp(startBox.fontSize*factor,8,180)});
-   dirty=true;
-  }
-  moveable?.updateRect();
- });
- moveable.on('resizeEnd',()=>{diagnostics.resizeEnds++;commit();});
  // Moveable supplies the touch handles and drag affordance. On transformed
  // menu pages, its resize gesture may stop after moving a target. Handle the
  // corner pointer coordinates directly so resizing remains reliable.
@@ -128,6 +108,7 @@ function select(el){
    const direction=corner.dataset.direction||'se';
    if(!/^(nw|ne|sw|se)$/.test(direction))return;
    ev.preventDefault();ev.stopPropagation();
+   diagnostics.resizeStarts++;
    gesture={pointerId:ev.pointerId,x:ev.clientX,y:ev.clientY,direction,rect:nativeBox(el),layer:readLayer()};
    try{corner.setPointerCapture(ev.pointerId)}catch(_){}
   };
@@ -151,9 +132,9 @@ function select(el){
     const factor=Math.min(w/Math.max(1,rect.w),h/Math.max(1,rect.h));
     saveMenu({x,y,w,h,fontSize:clamp(rect.fontSize*factor,8,180)});
    }
-   dirty=true;moveable?.updateRect();
+   diagnostics.resizes++;dirty=true;moveable?.updateRect();
   };
-  const onUp=ev=>{if(!gesture||gesture.pointerId!==ev.pointerId)return;gesture=null;commit();};
+  const onUp=ev=>{if(!gesture||gesture.pointerId!==ev.pointerId)return;gesture=null;diagnostics.resizeEnds++;commit();};
   document.addEventListener('pointerdown',onDown,true);
   document.addEventListener('mousedown',onMouseDown,true);
   document.addEventListener('pointermove',onMove,true);
