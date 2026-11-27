@@ -80,14 +80,31 @@ let browserInstance;
    assert.equal(new Set(names.map(e=>e.name)).size,26,'all 26 products must have native text layers, with no omitted products');
    assert(snapshot.pageOrder.every(p=>snapshot.pages[p].notes.includes('Source-native menu')),'dedicated source template must preserve the source document instead of generating generic cards');
    assert.equal(snapshot.meta.width,794,'native original menu dimensions must be preserved');
+   await frame.locator('img[data-owner-preview]').first().waitFor({state:'visible',timeout:45000});
+   const preview=frame.locator('img[data-owner-preview]').first();
+   assert(await preview.evaluate(el=>el.complete&&el.naturalWidth>0),'actual populated owner template preview must render');
+   await page.screenshot({path:path.join(shots,'native-menu-gallery.png'),fullPage:true});
+   // Actual native export, not a download test of the old CSS renderer.
+   await frame.getByRole('button',{name:'Export',exact:true}).click();
+   const exportDialog=frame.getByRole('dialog',{name:'Export',exact:true});
+   await exportDialog.locator('.format-card').filter({hasText:'PDF'}).click();
+   const pdf=page.waitForEvent('download',{timeout:90000});
+   await exportDialog.getByRole('button',{name:'Download PDF',exact:true}).click();
+   const file=await pdf;const pdfBytes=fs.readFileSync(await file.path());
+   assert(pdfBytes.subarray(0,5).toString()==='%PDF-'&&pdfBytes.length>1000,'actual native PDF is valid');
+   await file.saveAs(path.join(shots,'native-menu.pdf'));
+   console.log('NATIVE_MENU_PDF_BYTES',pdfBytes.length);
+   const close=exportDialog.getByRole('button',{name:'Close',exact:true});
+   if(await close.isVisible())await close.click();
+
 
   }
   if(mode==='motion'){
    assert(/Library|Presets|Templates/i.test(fullText),'Native motion editor includes a real browsable library');
    const layers=Number(await page.locator('#status').getAttribute('data-layers'));
    const assets=Number(await page.locator('#status').getAttribute('data-assets'));
-   assert(layers>=1,'The selected drink must have at least one actual upstream native timeline layer; a blank media library is not acceptable');
-   assert(assets>=1,'The owner-approved product photo must be imported as an upstream native media asset');
+   assert(layers>=3,'A new ad must have independent hero, brand, and product-detail tracks in the upstream native timeline');
+   assert.equal(assets,3,'Native scene must contain the approved product photo and two catalog-generated caption assets, not upstream samples');
    assert(!/NaN/.test(fullText),'Native motion controls cannot show NaN after media import');
    await frame.locator('canvas.stage-canvas').waitFor({state:'visible',timeout:25000});
    const stage=frame.locator('canvas.stage-canvas');
@@ -95,9 +112,25 @@ let browserInstance;
    await page.waitForTimeout(1100);
    const second=await stage.screenshot();
    assert(!first.equals(second),'actual native canvas must change over time');
+   await page.screenshot({path:path.join(shots,'native-motion-desktop.png'),fullPage:true});
+   await frame.getByRole('button',{name:'Export',exact:true}).click();
+   const dialog=frame.locator('.export-modal');
+   await dialog.getByRole('button',{name:'GIF',exact:true}).click();
+   await dialog.getByRole('button',{name:'720p',exact:true}).click();
+   await dialog.locator('.export-primary-action').click();
+   const link=dialog.locator('.export-done a[download]').first();
+   await link.waitFor({timeout:240000});
+   const gif=page.waitForEvent('download',{timeout:30000});
+   await link.click();
+   const file=await gif;const bytes=fs.readFileSync(await file.path());
+   assert(/^GIF8[79]a$/.test(bytes.subarray(0,6).toString())&&bytes.length>1000,'native animated GIF export is real');
+   await file.saveAs(path.join(shots,'native-motion.gif'));
+   console.log('NATIVE_MOTION_GIF_BYTES',bytes.length);
+   const close=dialog.locator('button.icon-btn').last();if(await close.isVisible())await close.click();
+
 
   }
-  await page.screenshot({path:path.join(shots,'native-'+mode+'-desktop.png'),fullPage:true});
+  if(mode==='menu')await page.screenshot({path:path.join(shots,'native-'+mode+'-desktop.png'),fullPage:true});
   assert(!errors.some(s=>/Cannot read properties of undefined|Hydration failed|Uncaught TypeError/i.test(s)),mode+' critical JS errors: '+errors.slice(0,3));
   await context.close();
  }
