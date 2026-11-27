@@ -53,14 +53,14 @@ function catalog(type,state,core){
        approved=saved(state).approvedPhotos?.[product?.id||''];
  return {product:{id:product?.id,name:product?.name,ingredients:product?.ingredients,sizes:product?.sizes},
   brand,currency:state.currency||'USD',photoUrl:approved?.url,
-  aspect:'portrait',savedScene:saved(state).motion?.scene||null};
+  aspect:'portrait',savedScene:saved(state).motionByProduct?.[product?.id]?.scene||null};
 }
 function setStatus(message,bad){
  const target=$('#nativeStatus');if(!target)return;
  target.textContent=message;target.dataset.state=bad?'error':'ready';
 }
 const nonce=()=>Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
-function dispose(){if(active){active=null;root.removeEventListener('message',onMessage);}}
+function dispose(){if(active){clearTimeout(active.loadTimeout);active=null;root.removeEventListener('message',onMessage);}}
 function onMessage(ev){
  const a=active;if(!a||ev.origin!==location.origin||ev.source!==a.frame?.contentWindow)return;
  const d=ev.data;if(!d||d.nonce!==a.nonce||typeof d.type!=='string')return;
@@ -68,7 +68,7 @@ function onMessage(ev){
   if(a.sent)return;a.sent=true;
   a.frame.contentWindow.postMessage({type:'SEIYUN_NATIVE_INIT',nonce:a.nonce,catalog:a.preparedCatalog||catalog(a.type,a.state,a.core)},location.origin);
  }
- if(d.type==='SEIYUN_NATIVE_LOADED')setStatus(a.type==='menu'?'Full OpenTempl menu editor ready. Use its native undo, layers and export controls.':'Full Motion Studio editor ready. Choose among its native motion presets.');
+ if(d.type==='SEIYUN_NATIVE_LOADED'){clearTimeout(a.loadTimeout);setStatus(a.type==='menu'?'Full OpenTempl menu editor ready. Use its native undo, layers and export controls.':'Full Motion Studio editor ready. Choose among its native motion presets.');}
  if(d.type==='SEIYUN_NATIVE_ERROR')setStatus('Native editor: '+String(d.error||'Could not load').slice(0,220),true);
  if(d.type==='SEIYUN_NATIVE_SAVE'){
   const doc=d.snapshot,scene=d.scene;
@@ -79,7 +79,9 @@ function onMessage(ev){
   }else{
    if(!scene||!Array.isArray(scene.tracks))return;
    const size=JSON.stringify(scene).length;if(size>900000)return;
-   a.state.nativeArtworks={...saved(a.state),motion:{scene,updatedAt:new Date().toISOString()}};
+   const productId=a.preparedCatalog?.product?.id;
+   if(!productId)return;
+   a.state.nativeArtworks={...saved(a.state),motionByProduct:{...(saved(a.state).motionByProduct||{}),[productId]:{scene,updatedAt:new Date().toISOString()}}};
   }
   a.save();
   setStatus('Artwork saved to your private draft. Native undo/redo and downloads are still available.');
@@ -119,6 +121,7 @@ async function mount(state,type,core,save){
    return;
   }
   frame.src=url;
+  active.loadTimeout=setTimeout(()=>{if(active?.nonce===n)setStatus('The full editor did not finish loading. Reload this page; check the browser console or deployment logs if this persists.',true);},60000);
  }catch{setStatus('The native editor could not be reached. Check this deployment and internet connection.',true);}
 }
 function onClick(ev){
