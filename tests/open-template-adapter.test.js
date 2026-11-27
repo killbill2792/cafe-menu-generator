@@ -82,3 +82,16 @@ test('bakery, wine and weekly lunch templates expose real product slots, not emp
   assert(count>=expected,id+' maps '+count+' items, expected at least '+expected);
  }
 });
+
+test('single-product special posters replace the native hero title, price and ingredient text with the owner drink',()=>{
+ for(const id of ['food-menu-special-story','asia-onigiri-label']){
+  const d=pack.find(x=>x.id===id),state=create(4);
+  const r=adapter.render(state,d,{format:id==='food-menu-special-story'?'portrait':'a4'});
+  const page=r.pages[0];
+  assert.equal((page.match(/data-menu-product=/g)||[]).length,1,id+' must feature exactly one primary drink');
+  assert(page.includes('Café test item 0'),id);
+  assert(page.includes('$7.00'),id+' must show owner price');
+  assert(page.includes('Milk and cardamom'),id+' must show owner ingredients');
+  assert(page.includes('Seiyun Yemeni Coffee'),id+' must show owner brand');
+ }
+});
