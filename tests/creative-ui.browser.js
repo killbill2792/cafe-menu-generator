@@ -37,19 +37,20 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.locator('[data-cs-zoom="zoom"]').evaluate(el=>{el.value='165';el.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.match(await page.locator('[data-menu-product="ref-01"] img').first().getAttribute('style'),/scale\(1\.65\)/,'real photo is zoomed without changing its box');
  await page.locator('[data-cs-action="designs"]').click();
- assert.equal(await page.locator('.cs-design').count(),24,'existing choices preserved');
+ assert((await page.locator('.cs-design').count())>=45,'real template packs added to 24 legacy menu designs');
+ assert((await page.locator('[data-cs-design="opentempl:food-menu-cafe-nord"] .mg-export-page').count())===1,'imported template thumbnail is real rendered art');
  await page.locator('[data-cs-design="photo-cards-dark"]').click();
  assert((await page.locator('#csArtPage').innerHTML()).includes('mg-layout-photo-cards'),'template switch updates actual page');
  await page.locator('[data-cs-tab="showcase"]').click();
- await page.locator('.scene-card').first().waitFor({timeout:12000});
- assert.equal(await page.locator('.scene-card').count(),6,'Motion Lab renderer creates moving cards');
- const initial=await page.locator('.scene-card').first().evaluate(n=>n.style.transform);
- await page.waitForTimeout(1100);
- const next=await page.locator('.scene-card').first().evaluate(n=>n.style.transform);
- assert.notEqual(initial,next,'actual motion changes frame position');
- await page.locator('[data-cs-motion="orbit"]').click();
- await page.locator('#csMotion[data-mode="orbit"]').waitFor({timeout:12000});
- assert.equal(await page.locator('#csMotion').getAttribute('data-mode'),'orbit','motion choices switch modes');
+ await page.locator('.cs-hero-img').waitFor({timeout:12000});
+ assert.equal(await page.locator('.cs-hero-img').count(),1,'one featured drink, never a collection of moving copies');
+ assert.equal(await page.locator('.scene-card').count(),0,'no old Motion Lab photo gallery');
+ assert((await page.locator('[data-environment-layer]').count())>=3,'actual layered environment exists');
+ const current=await page.locator('.cs-cinematic-beam').evaluate(el=>getComputedStyle(el).animationName);
+ assert.notEqual(current,'none','hero scene has moving environmental light');
+ await page.locator('[data-cs-motion="ingredient-motion"]').click();
+ await page.locator('[data-scene="ingredient-motion"]').waitFor({timeout:12000});
+ assert.equal(await page.locator('.cs-hero-img').count(),1,'scene change keeps one hero drink');
  await page.screenshot({path:'artifacts/product-showcase-desktop.png',fullPage:true});
  // GIF export uses the real vendored encoder, not a mocked output.
  const dl=page.waitForEvent('download',{timeout:65000});
@@ -69,7 +70,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
    assert(bytes.length>1000,'video contains actual encoded frames');
    assert(/\.(mp4|webm)$/.test(videoType),'native video extension is accurate');
  }
- console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','24 gallery options','template switch','live Motion Lab frames','motion selection','GIF download',...(supports?['native video export']:[])],gifBytes:data.byteLength,videoBytes,videoType,pageErrors:errors}));
+ console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','45 gallery options','template switch','single cinematic hero','animated environment','scene selection','GIF download',...(supports?['native video export']:[])],gifBytes:data.byteLength,videoBytes,videoType,pageErrors:errors}));
  assert.deepEqual(errors,[],'no uncaught browser exceptions');
  const mobile=await browser.newPage({viewport:{width:390,height:800}});
  await mobile.route('**/cloud.js',route=>route.fulfill({contentType:'application/javascript',body:'window.SEIYUN_CONFIG={};window.seiyunCloud=null;'}));
