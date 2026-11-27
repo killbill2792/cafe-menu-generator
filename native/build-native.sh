@@ -91,6 +91,34 @@ if [ "${NATIVE_ONLY:-}" != "menu" ]; then
   git checkout --detach "$MOTION_SHA"
   cp "$ROOT/native/motion-studio-bridge.tsx" components/SeiyunNativeBridge.tsx
 
+  # The upstream current Apache-2.0 LICENSE explicitly removed the old hosted-
+  # service prohibition, but a stale first-run modal still incorrectly demands
+  # agreement not to host it. Use the correct license and remove friction only
+  # in our authenticated embedded mode; keep full native project UI.
+  python3 - <<'PY'
+from pathlib import Path
+p=Path('components/WelcomeDialog.tsx')
+s=p.read_text()
+s=s.replace("  const [agreed, setAgreed] = useState(false);","")
+s=s.replace("    try { if (!localStorage.getItem(SEEN_KEY)) setOpen(true); } catch { /* storage blocked */ }",
+"""    const embedded = new URL(location.href).searchParams.has('seiyun_nonce');
+    if (embedded) {
+      try { localStorage.setItem(SEEN_KEY, '1'); } catch {}
+      const projects = useProjectStore.getState();
+      projects.bootstrap();
+      return;
+    }
+    try { if (!localStorage.getItem(SEEN_KEY)) setOpen(true); } catch { /* storage blocked */ }""")
+s=s.replace("            Use it freely, including at work and in production. The one thing the\n            licence holds back is <b>offering Motion Studio to other people as a\n            hosted service</b> — that stays with the maintainers.",
+"""            Motion Studio Open is available under Apache License 2.0, including for
+            self-hosted commercial use. This copy retains the upstream LICENSE and NOTICE.""")
+start=s.index('          <label className="welcome-agree">')
+end=s.index('        </div>',start)
+s=s[:start]+"""          <button className="btn primary full" onClick={enter}>Go to the library</button>
+"""+s[end:]
+p.write_text(s)
+PY
+
   python3 - <<'PY'
 from pathlib import Path
 p=Path('app/layout.tsx')
