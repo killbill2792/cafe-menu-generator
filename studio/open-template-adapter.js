@@ -37,7 +37,7 @@ function slotPlan(page,doc){
   const head=brandIndex(page,doc);
   let options=txt.filter(t=>t.i!==head&&!numeric(t.e.text)&&font(t.e)>=24&&font(t.e)<=75&&
    t.e.x>doc.width*.14&&t.e.y>doc.height*.16&&String(t.e.text).length>4&&
-   !/^(special|mon|tue|wed|thu|fri|sat|sun|menu|lunch|week\s*\d+)/i.test(String(t.e.text).trim()));
+   !/^(?:special|mon|tue|wed|thu|fri|sat|sun|menu|lunch|week\s*\d+)\b/i.test(String(t.e.text).trim()));
   if(!options.length&&/special-story|onigiri-label/.test(doc.id))
    options=txt.filter(t=>t.i!==head&&!numeric(t.e.text)&&font(t.e)>=60&&t.e.y>doc.height*.3);
   if(/lunch-week/.test(doc.id)){
