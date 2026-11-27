@@ -1,0 +1,32 @@
+/* Full self-hosted native editor — no fake canvas, scale hacks or custom drag handles. */
+.cs-native-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;flex-wrap:wrap;margin:0 0 20px}
+.cs-native-heading h1{font-family:'Fraunces',Georgia,serif;font-size:clamp(28px,3.5vw,46px);line-height:1.07;margin:6px 0}
+.cs-native-heading p{font-size:15px;line-height:1.55;max-width:780px;color:#7a675b}
+.cs-native-heading small{font-size:11px;letter-spacing:.16em;font-weight:850;color:#9a5d3c}
+.cs-native-top-actions{display:flex;gap:10px;flex-wrap:wrap}
+.cs-native-status{padding:11px 16px;margin-bottom:10px;border:1px solid #d6c4af;border-radius:10px;background:#f8f0e5;font-size:13px;color:#5c3b2d}
+.cs-native-status[data-state=error]{border-color:#eab0ad;color:#9b2927;background:#fff2ee}
+.cs-native-frame{background:#f5f1eb;border:1px solid #d9c9b7;border-radius:14px;overflow:hidden;min-height:min(75vh,730px);height:min(83vh,980px);box-shadow:0 22px 55px #38241615}
+.cs-native-frame iframe{width:100%;height:100%;border:0;background:white;display:block}
+.cs-native-frame:fullscreen{width:100vw;height:100vh;min-height:0;border:0;border-radius:0;background:#f6f1e9}
+.cs-native-legal{font-size:12px;line-height:1.5;color:#927866;margin:12px 0 2px}
+.cs-native-product-picker{padding:17px;border:1px solid #e0cdb7;border-radius:13px;margin-bottom:14px;display:grid;gap:16px;background:#fffdfa}
+.cs-native-product-picker select{font-size:15px;min-height:43px}
+.cs-native-photo-area{display:grid;gap:10px}
+.cs-native-photo-area>strong{font-size:14px}
+.cs-native-photos{display:flex;gap:11px;overflow:auto;padding:5px 1px}
+.cs-native-photo{border:2px solid #dfd1c0;border-radius:12px;background:#f7f0e6;padding:7px;display:grid;gap:7px;flex:0 0 160px;cursor:pointer;text-align:center;color:#443128}
+.cs-native-photo:hover,.cs-native-photo:focus-visible{border-color:#a97249}
+.cs-native-photo.selected{border-color:#783d29;outline:3px solid #d6a8757d}
+.cs-native-photo img{width:100%;height:170px;object-fit:contain;display:block;border-radius:8px;background:white}
+.cs-native-photo span{font-size:12px;font-weight:700}
+.cs-native-empty{padding:50px 24px;text-align:center;background:#faf4eb;border:1px solid #dbcaba;border-radius:14px}
+.cs-native-empty strong{font-family:'Fraunces',Georgia,serif;font-size:24px}
+.cs-native-empty p{font-size:14px;line-height:1.5;color:#806958}
+@media(max-width:700px){
+ .cs-native-heading p{font-size:13px}
+ .cs-native-frame{height:calc(100dvh - 144px);min-height:540px;border-radius:8px}
+ .cs-native-photo{flex-basis:128px}
+ .cs-native-photo img{height:130px}
+ .cs-native-product-picker{padding:12px}
+}
