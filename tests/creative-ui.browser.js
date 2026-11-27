@@ -5,6 +5,7 @@ const fs=require('node:fs');
 const http=require('node:http');
 const path=require('node:path');
 const root=path.resolve(__dirname,'../studio');
+fs.mkdirSync(path.resolve(__dirname,'../artifacts'),{recursive:true});
 const type={'.html':'text/html','.js':'application/javascript','.css':'text/css','.png':'image/png','.json':'application/json'};
 const server=http.createServer((req,res)=>{
  const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
@@ -26,6 +27,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.evaluate(()=>{draft=starter();render();});
  assert.equal(await page.locator('.cs-tab').count(),2,'exactly two top-level features');
  assert.equal(await page.locator('.cs-design').count(),0,'template gallery hidden until chosen');
+ await page.screenshot({path:'artifacts/menu-generator-desktop.png',fullPage:true});
  assert(await page.locator('.cs-art-page .mg-item').count()>0,'menu artboard visible immediately');
  assert.equal(await page.locator('.cs-tab').allInnerTexts().then(s=>s.join(',')),'▦ Menu Generator,▶ Product Showcase');
  const first=page.locator('.mg-brand-name').first();await first.click();await page.keyboard.press('Control+A');await page.keyboard.insertText('Seiyun Studio Cafe');await page.locator('.cs-intro h1').click();
@@ -48,6 +50,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.locator('[data-cs-motion="orbit"]').click();
  await page.locator('#csMotion[data-mode="orbit"]').waitFor({timeout:12000});
  assert.equal(await page.locator('#csMotion').getAttribute('data-mode'),'orbit','motion choices switch modes');
+ await page.screenshot({path:'artifacts/product-showcase-desktop.png',fullPage:true});
  // GIF export uses the real vendored encoder, not a mocked output.
  const dl=page.waitForEvent('download',{timeout:65000});
  await page.locator('[data-cs-action="gif"]').click();
@@ -75,6 +78,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await mobile.goto(url,{waitUntil:'domcontentloaded'});
  await mobile.evaluate(()=>{draft=starter();render();});
  const overflow=await mobile.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+ await mobile.screenshot({path:'artifacts/menu-generator-mobile.png',fullPage:true});
  assert(overflow<=5,'mobile interface should not horizontally overflow: '+overflow);
  console.log('Mobile horizontal overflow:',overflow);
  await browser.close();await new Promise(resolve=>server.close(resolve));
