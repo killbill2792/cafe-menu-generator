@@ -45,6 +45,14 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.locator('.moveable-control-box').first().waitFor({timeout:6000});
  assert.equal(await page.evaluate(()=>typeof Moveable),'function','locally vendored MIT drag engine is available');
  await page.screenshot({path:'artifacts/real-menu-design-editor.png',fullPage:true});
+ const brandBox=await page.locator('#csArtPage [data-layout-key="brand"]').first().boundingBox();
+ assert(brandBox,'source title visible');
+ await page.mouse.move(brandBox.x+brandBox.width/2,brandBox.y+brandBox.height/2);
+ await page.mouse.down();
+ await page.mouse.move(brandBox.x+brandBox.width/2+32,brandBox.y+brandBox.height/2+24,{steps:5});
+ await page.mouse.up();
+ const savedBrand=await page.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-cafe-nord']?.brand);
+ assert(savedBrand&&Number.isFinite(savedBrand.x),'dragging title persists actual source layout coordinates');
  await page.locator('[data-cs-action="designs"]').click();
  await page.locator('[data-cs-design="photo-cards-dark"]').click();
  assert((await page.locator('#csArtPage').innerHTML()).includes('mg-layout-photo-cards'),'template switch updates actual page');
@@ -63,6 +71,12 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.locator('.cs-hero-product').click();
  await page.locator('.moveable-control-box').first().waitFor({timeout:6000});
  assert.equal(await page.locator('[data-scene-layer="hero"]').count(),1,'hero layer is independently selectable for drag/resize');
+ const heroBox=await page.locator('.cs-hero-product').boundingBox();
+ assert(heroBox,'hero artwork visible');
+ await page.mouse.move(heroBox.x+heroBox.width/2,heroBox.y+heroBox.height/2);
+ await page.mouse.down();await page.mouse.move(heroBox.x+heroBox.width/2+40,heroBox.y+heroBox.height/2-20,{steps:5});await page.mouse.up();
+ const heroPlacement=await page.evaluate(()=>draft.showcaseArtwork.layerOverrides?.hero);
+ assert(heroPlacement&&heroPlacement.x!==50,'moving the featured drink persists a design-only hero position');
  await page.screenshot({path:'artifacts/product-showcase-desktop.png',fullPage:true});
  // GIF export uses the real vendored encoder, not a mocked output.
  const dl=page.waitForEvent('download',{timeout:65000});
