@@ -1,6 +1,6 @@
 # Deploy and verify Seiyun Creative Studio (export-first)
 
-> **Current state:** Feature changes live on branch `feat/real-template-browser-cinematic-hero` and PR #5, **not verified on the production site**. Only report the owner-facing product as delivered after signed-in testing and a confirmed Cloudflare deployment. Read `agent.md`, `specs/0003-real-template-library-wysiwyg.md` and `specs/0004-cinematic-product-scenes.md` first.
+> **Current state:** PR #5 was merged into GitHub `main` at commit `eb617f4ac9cc4318aa6a8098595dd85efc27a5c6`. The **Cloudflare production deployment and authenticated owner workflow are not yet verified**. Only report the owner-facing product as delivered after signed-in testing and a confirmed Cloudflare deployment. Read `agent.md`, `specs/0003-real-template-library-wysiwyg.md` and `specs/0004-cinematic-product-scenes.md` first.
 
 ## What the owner is using
 
