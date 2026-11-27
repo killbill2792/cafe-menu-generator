@@ -87,9 +87,132 @@ function cleanDecorations(snapshot:DesignSnapshot,width:number,height:number):El
     .filter(el=>['shape','line','svg'].includes(el.type))
     .slice(0,64).map(el=>({...structuredClone(el),id:id(),locked:false}));
 }
+// Bind the actual editable source document, not a CSS or generic-card
+// reconstruction. Text/line/shape positions, page dimensions and native
+// typography come from the selected upstream menu. Only sample assets and
+// sample restaurant content are replaced. Repeat the original content page
+// when more products are present than the native design's own row capacity.
+type MenuSlot={name:TextElement;price:TextElement|null;desc:TextElement|null};
+const isPrice=(t:string)=>/^\s*\+?(?:[$€£]\s*)?\d{1,4}(?:[.,]\d{1,2})?(?:\s*\/\s*\d{1,4}(?:[.,]\d{1,2})?)?\s*$/.test(t);
+function sourceSlots(page:Page,doc:DesignSnapshot,templateId:string):MenuSlot[]{
+ const all=page.elementIds.map(x=>doc.elements[x]).filter((e):e is TextElement=>e?.type==='text');
+ if(templateId==='food-menu-special-story'){
+  const name=all.find(e=>e.text.startsWith('Soup of')),price=all.find(e=>e.text.trim()==='89'),desc=all.find(e=>e.text.startsWith('Roast tomato'));
+  if(name)return [{name,price:price||null,desc:desc||null}];
+ }
+ if(templateId==='food-menu-lunch-week'){
+  return all.filter(e=>e.x>=250&&e.y>=475&&e.fontSize>=35&&e.fontSize<=40).map(name=>({name,price:null,desc:all.find(e=>e.x===name.x&&e.y>name.y&&e.y<name.y+85&&e.fontSize<name.fontSize)||null}));
+ }
+ const slots:MenuSlot[]=[],used=new Set<string>();
+ for(const price of all.filter(e=>isPrice(e.text)&&e.fontSize>=10&&e.fontSize<97)){
+  // Wine-list year columns and standalone section numbers are not prices.
+  if(/^\s*(?:19|20)\d{2}\s*$/.test(price.text))continue;
+  const matches=all.filter(e=>e.id!==price.id&&!isPrice(e.text)&&!e.text.includes('\n')&&e.text.length<90&&e.x<price.x&&e.fontSize>=Math.max(10,price.fontSize*.4)&&e.fontSize<=Math.max(55,price.fontSize*1.65)&&Math.abs(e.y-price.y)<Math.max(17,e.fontSize*.42));
+  matches.sort((a,b)=>Math.abs(a.y-price.y)*5+Math.abs(price.x-a.x-a.w)*.07-a.fontWeight/500-(Math.abs(b.y-price.y)*5+Math.abs(price.x-b.x-b.w)*.07-b.fontWeight/500));
+  const name=matches[0];if(!name||used.has(name.id))continue;
+  used.add(name.id);slots.push({name,price,desc:null});
+ }
+ slots.sort((a,b)=>a.name.y-b.name.y||a.name.x-b.name.x);
+ for(const s of slots){
+  const n=s.name;
+  s.desc=all.filter(e=>!slots.some(a=>a.name.id===e.id||a.price?.id===e.id)&&!isPrice(e.text)&&e.y>=n.y+Math.min(n.h,24)*.62&&e.y<n.y+Math.max(55,n.h+35)&&Math.abs(e.x-n.x)<20&&e.fontSize<n.fontSize&&e.fontWeight<=500).sort((a,b)=>a.y-b.y)[0]||null;
+ }
+ return slots;
+}
+function formatPrices(p:OwnerProduct,currency:string){
+ return (p.sizes||[]).map(z=>{let amount=Number(z.price||0).toFixed(2);try{amount=new Intl.NumberFormat('en-US',{style:'currency',currency:currency||'USD'}).format(Number(z.price||0));}catch{}return (z.name?z.name+' ':'')+amount;}).join(' · ');
+}
+function sourceText(base:TextElement,name:string,value:string):TextElement{
+ const el:TextElement={...structuredClone(base),id:id(),name,text:value,locked:false,groupId:undefined,runs:undefined};
+ // Fit new words without changing original position, rotation, alignment or font.
+ const chars=Math.max(...value.split('\n').map(x=>x.length),1);
+ el.fontSize=Math.min(el.fontSize,Math.max(6,el.w/(chars*.56)));
+ return el;
+}
+function createSourcePages(template:DesignSnapshot,owner:OwnerPayload,images:Map<string,string>):DesignSnapshot|null{
+ const w=template.meta.width,h=template.meta.height,templateId=owner.templateId||'';
+ const sourcePages=template.pageOrder.map(pid=>template.pages[pid]).filter(Boolean).map(page=>({page,slots:sourceSlots(page,template,templateId)})).filter(p=>p.slots.length>0);
+ if(!sourcePages.length)return null;
+ const products=owner.products||[],pages:Record<string,Page>={},elements:Record<string,Element>={},order:string[]=[];
+ const brand=owner.brand?.name||'Your Café';
+ let cursor=0,round=0;
+ do{
+  const basis=sourcePages[round++%sourcePages.length],{page,slots}=basis,pid=id(),ids:string[]=[];
+  const add=(el:Element)=>{elements[el.id]=el;ids.push(el.id)};
+  const sourceEls=page.elementIds.map(x=>template.elements[x]).filter(Boolean);
+  const fieldIds=new Set(slots.flatMap(x=>[x.name.id,x.price?.id,x.desc?.id]).filter(Boolean));
+  const headings=sourceEls.filter((e):e is TextElement=>e.type==='text'&&!fieldIds.has(e.id)&&!isPrice(e.text)&&e.text.length>1);
+  const header=headings.slice().sort((a,b)=>b.fontSize-a.fontSize)[0];
+  const categories=[...new Set(products.map(p=>p.category||'Menu'))];
+  const batch=products.slice(cursor,cursor+slots.length);cursor+=batch.length;
+  // Keep non-photo decorative layers exactly in native source coordinates.
+  // Upstream demo photographs are intentionally not imported.
+  for(const e of sourceEls){
+   if(e.type==='shape'&&e.fill.type==='image')continue;
+   if(e.type==='shape'||e.type==='svg'||e.type==='line'){
+    const copy={...structuredClone(e),id:id(),locked:false,groupId:undefined};
+    if(copy.type==='line'){delete copy.from;delete copy.to}
+    add(copy);
+   }
+  }
+  if(header)add(sourceText(header,'brand:name',brand));
+  else add(textElement(undefined,'brand:name',brand,w*.05,h*.018,w*.9,h*.045,w*.033,'#37231b',800));
+  let section=0;
+  for(const el of headings){
+   if(el===header)continue;
+   if(/^(?:hot|cold|coffee|tea|extras|small plates|burgers|drinks|cocktails|sea|land|garden|broths|dry|sparkling|white|orange|red|by the glass|other|food)$/i.test(el.text.trim())){
+    add(sourceText(el,'section:'+section,categories[section++%Math.max(1,categories.length)]||'MENU'));
+   }else if(/^(?:menu|our menu|the menu)$/i.test(el.text.trim()))add(sourceText(el,'page:heading','OUR MENU'));
+  }
+  slots.forEach((slot,index)=>{
+   const p=batch[index];if(!p)return;
+   let n=sourceText(slot.name,'product:'+p.id+':name',p.name||'');
+   let description=slot.desc?sourceText(slot.desc,'product:'+p.id+':ingredients',p.ingredients||''):null;
+   let price=slot.price?sourceText(slot.price,'product:'+p.id+':price',formatPrices(p,owner.currency||'USD')):null;
+   const asset=images.get(p.id);
+   if(templateId==='food-menu-special-story'){
+    // The source uses an oversized background photo. Replace it with a whole
+    // product portrait, above the original large headline, not stock footage.
+    if(asset)add(imageElement(p.id,asset,w*.24,h*.17,w*.52,h*.44));
+    n.fontSize=Math.min(n.fontSize,w*.085);
+    if(price){price.x=w*.70;price.y=h*.87;price.w=w*.25;price.h=h*.07;price.fontSize=Math.min(w*.048,price.w/Math.max(1,price.text.length)*1.55);}
+   }else if(asset){
+    // Text-first source layouts do not contain product image frames. Make
+    // room in that exact row without changing the surrounding template.
+    const rowH=Math.max(n.h,description?description.y+description.h-n.y:n.h);
+    const ph=Math.min(rowH*.95,Math.max(18,n.w*.19)),pw=ph*2/3;
+    if(n.w>pw+28){add(imageElement(p.id,asset,n.x,n.y,pw,ph));n.x+=pw+5;n.w-=pw+5;
+     if(description){description.x+=pw+5;description.w=Math.max(12,description.w-pw-5);}
+    }
+   }
+   // If a text-only template has no dedicated price/description boxes, retain
+   // its native text row and create native text fields inside that row.
+   if(!price){
+    const px=n.x+n.w*.69,pw=n.w*.31;
+    price=textElement(n,'product:'+p.id+':price',formatPrices(p,owner.currency||'USD'),px,n.y,pw,n.h,Math.min(n.fontSize*.75,pw/Math.max(1,formatPrices(p,owner.currency||'USD').length)*1.5),n.color,700);
+    n.w*=.66;
+   }
+   if(!description&&p.ingredients){
+    const rowNext=slots.slice(index+1).map(v=>v.name).find(v=>Math.abs(v.x-slot.name.x)<30&&v.y>slot.name.y);
+    const remaining=(rowNext?.y||Math.min(h,n.y+n.h+25))-n.y-n.h;
+    if(remaining>=10)description=textElement(n,'product:'+p.id+':ingredients',p.ingredients,n.x,n.y+n.h,n.w,remaining,Math.min(n.fontSize*.72,remaining*.75),n.color,400);
+   }
+   n=sourceText(n,n.name||'',n.text);
+   add(n);
+   if(description)add(sourceText(description,description.name||'',description.text));
+   if(price)add(sourceText(price,price.name||'',price.text));
+  });
+  const background:Fill=owner.brand?.customColors&&owner.brand.background?{type:'solid',color:owner.brand.background}:page.background?.type==='image'?{type:'solid',color:'#f7eee3'}:structuredClone(page.background);
+  pages[pid]={...structuredClone(page),id:pid,name:'Menu '+(order.length+1),background,elementIds:ids,notes:'Source-native menu: '+templateId};
+  order.push(pid);
+ }while(cursor<products.length);
+ return {meta:{...template.meta,id:id(),title:brand+' · '+templateId,createdAt:Date.now(),updatedAt:Date.now()},pageOrder:order,pages,elements};
+}
+
 function createPages(template:DesignSnapshot,owner:OwnerPayload,images:Map<string,string>):DesignSnapshot {
+  const source=createSourcePages(template,owner,images);if(source)return source;
   const width=Math.max(600,Math.min(1920,template.meta.width||816)),
-        height=Math.max(800,Math.min(2560,template.meta.height||1056));
+        height=Math.max(600,Math.min(2560,template.meta.height||1056));
   const font=(Object.values(template.elements).find(e=>e.type==='text')||{}) as TextElement;
   const ownerBrand=owner.brand||{},main=ownerBrand.name||'Your Café';
   const custom=ownerBrand.customColors===true;
@@ -136,7 +259,7 @@ function createPages(template:DesignSnapshot,owner:OwnerPayload,images:Map<strin
       add(textElement(font,'product:'+prod.id+':price',prices,tx,y+cardH*.73,tW,cardH*.15,width*.017,tint,800));
     }
     add(textElement(font,'page:count',String(p+1)+' / '+count,width*.86,height*.955,width*.10,height*.025,width*.016,ink,500));
-    pages[pid]={id:pid,name:'Menu '+(p+1),background:fill,elementIds:ids,notes:'',transition:'none',duration:5};
+    pages[pid]={id:pid,name:'Adapted menu '+(p+1),background:fill,elementIds:ids,notes:'Catalog-fit adaptation; this source does not have recognizable menu price rows.',transition:'none',duration:5};
     order.push(pid);
   }
   return {meta:{...template.meta,id:id(),title:main+' • Menu',width,height,unit:'px',createdAt:Date.now(),updatedAt:Date.now()},pageOrder:order,pages,elements};
