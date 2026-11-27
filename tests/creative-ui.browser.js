@@ -54,6 +54,17 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  const savedBrand=await page.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-cafe-nord']?.brand);
  if(!savedBrand)console.log('moveable brand diagnostics',await page.evaluate(()=>({drag:SeiyunLayoutEditor.diagnostics,editable:document.querySelector('#csArtPage [data-layout-key="brand"]')?.isContentEditable,scale:document.querySelector('#csArtPage')?.style.transform})));
  assert(savedBrand&&Number.isFinite(savedBrand.x),'dragging title persists actual source layout coordinates');
+ await page.locator('#csArtPage [data-layout-key="brand"]').first().click();
+ const beforeSize=await page.evaluate(()=>draft.menuArtwork.layoutOverrides['opentempl:food-menu-cafe-nord'].brand.w);
+ const resizeHandle=page.locator('.moveable-control-box .moveable-se').first();
+ const resizeBox=await resizeHandle.boundingBox();
+ assert(resizeBox,'selection exposes a south-east resize corner');
+ await page.mouse.move(resizeBox.x+resizeBox.width/2,resizeBox.y+resizeBox.height/2);
+ await page.mouse.down();
+ await page.mouse.move(resizeBox.x+resizeBox.width/2+24,resizeBox.y+resizeBox.height/2+12,{steps:6});
+ await page.mouse.up();
+ const afterSize=await page.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-cafe-nord']?.brand?.w);
+ assert(afterSize>beforeSize,'pulling the corner enlarges the actual saved brand title');
  await page.locator('[data-cs-action="designs"]').click();
  await page.locator('[data-cs-design="photo-cards-dark"]').click();
  assert((await page.locator('#csArtPage').innerHTML()).includes('mg-layout-photo-cards'),'template switch updates actual page');
