@@ -1,0 +1,83 @@
+name: Production Creative Studio smoke check
+on:
+  push:
+    branches: [chore/verify-creative-studio-live]
+    paths:
+      - '.github/workflows/production-creative-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-asset-verification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare the live public Worker assets with this commit
+        env:
+          DEPLOY_URL: https://cafe-menu-generator.raj-techai2026.workers.dev
+        shell: bash
+        run: |
+          set -u
+          mkdir -p artifacts
+          {
+            echo "Live Creative Studio deployment check"
+            echo "Checked at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "Repository SHA: $GITHUB_SHA"
+            echo "Public deployment: $DEPLOY_URL"
+            echo
+            code=$(curl -sS -L --connect-timeout 10 --max-time 20 --retry 1 -o /tmp/live-index.html -w "%{http_code}" "$DEPLOY_URL/")
+            rc=$?
+            echo "GET /: HTTP ${code:-000} (curl exit $rc)"
+            if [ "$rc" -ne 0 ] || [ "$code" != "200" ]; then
+              echo "RESULT: UNREACHABLE OR HTTP ERROR"
+              exit 20
+            fi
+            if ! grep -q 'creative-studio.js' /tmp/live-index.html; then
+              echo "RESULT: OLD DEPLOYMENT (index.html does not load the Creative Studio module)"
+              exit 21
+            fi
+            echo "HTML: two-feature script is referenced"
+            failed=0
+            for asset in \
+              creative-core.js \
+              creative-studio.js \
+              creative-showcase.js \
+              creative-studio.css \
+              menu-gallery.js \
+              vendor/motion-lab/motion.js \
+              vendor/gifenc/index.js
+            do
+              dest="/tmp/live-$(basename "$asset")"
+              code=$(curl -sS -L --connect-timeout 10 --max-time 20 --retry 1 -o "$dest" -w "%{http_code}" "$DEPLOY_URL/$asset")
+              rc=$?
+              if [ "$rc" -ne 0 ] || [ "$code" != "200" ]; then
+                echo "$asset: HTTP ${code:-000}, curl exit $rc => MISSING/UNREACHABLE"
+                failed=1
+              elif cmp -s "studio/$asset" "$dest"; then
+                echo "$asset: HTTP 200, exact match => CURRENT"
+              else
+                echo "$asset: HTTP 200, content differs => STALE OR MODIFIED"
+                echo "  repo sha256: $(sha256sum "studio/$asset" | cut -d' ' -f1)"
+                echo "  live sha256: $(sha256sum "$dest" | cut -d' ' -f1)"
+                failed=1
+              fi
+            done
+            if [ "$failed" -ne 0 ]; then
+              echo "RESULT: DEPLOYMENT DOES NOT MATCH THE MERGED CODE"
+              exit 22
+            fi
+            echo "RESULT: CURRENT PUBLIC STATIC ASSETS"
+            echo "NOTE: This only checks public assets. Owner sign-in, Supabase data/photo storage and private exports are NOT tested."
+          } > artifacts/production-smoke-report.txt 2>&1
+          rc=$?
+          cat artifacts/production-smoke-report.txt
+          exit "$rc"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-creative-smoke-report
+          path: artifacts/production-smoke-report.txt
+          if-no-files-found: ignore
