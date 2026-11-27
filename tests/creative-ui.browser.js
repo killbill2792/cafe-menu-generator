@@ -39,6 +39,13 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.locator('[data-cs-action="designs"]').click();
  assert((await page.locator('.cs-design').count())>=45,'real template packs added to 24 legacy menu designs');
  assert((await page.locator('[data-cs-design="opentempl:food-menu-cafe-nord"] .mg-export-page').count())===1,'imported template thumbnail is real rendered art');
+ await page.locator('[data-cs-design="opentempl:food-menu-cafe-nord"]').click();
+ assert((await page.locator('#csArtPage [data-opentempl-source="food-menu-cafe-nord"]').count())===1,'real imported design chosen');
+ await page.locator('#csArtPage [data-layout-key="brand"]').first().click();
+ await page.locator('.moveable-control-box').first().waitFor({timeout:6000});
+ assert.equal(await page.evaluate(()=>typeof Moveable),'function','locally vendored MIT drag engine is available');
+ await page.screenshot({path:'artifacts/real-menu-design-editor.png',fullPage:true});
+ await page.locator('[data-cs-action="designs"]').click();
  await page.locator('[data-cs-design="photo-cards-dark"]').click();
  assert((await page.locator('#csArtPage').innerHTML()).includes('mg-layout-photo-cards'),'template switch updates actual page');
  await page.locator('[data-cs-tab="showcase"]').click();
@@ -51,6 +58,9 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.locator('[data-cs-motion="ingredient-motion"]').click();
  await page.locator('[data-scene="ingredient-motion"]').waitFor({timeout:12000});
  assert.equal(await page.locator('.cs-hero-img').count(),1,'scene change keeps one hero drink');
+ await page.locator('.cs-hero-product').click();
+ await page.locator('.moveable-control-box').first().waitFor({timeout:6000});
+ assert.equal(await page.locator('[data-scene-layer="hero"]').count(),1,'hero layer is independently selectable for drag/resize');
  await page.screenshot({path:'artifacts/product-showcase-desktop.png',fullPage:true});
  // GIF export uses the real vendored encoder, not a mocked output.
  const dl=page.waitForEvent('download',{timeout:65000});
