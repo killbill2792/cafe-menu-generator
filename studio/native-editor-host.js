@@ -37,7 +37,7 @@ function nativeUrl(type,nonce,state){
  return url.href;
 }
 function catalog(type,state,core){
- const brand=core.normalizeBrand(state.branding||{});
+ const brand={...core.normalizeBrand(state.branding||{}),customColors:state.branding?.customColors===true};
  if(type==='menu')return{
   brand,currency:state.currency||'USD',templateId:(()=>{
    const x=window.SeiyunMenuGallery?.getSettings(state)?.templateId||'';
