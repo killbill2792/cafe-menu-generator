@@ -240,7 +240,15 @@ scope.write_text("""export function ownerStorageKey(key: string): string {
     if (valid(provided)) sessionStorage.setItem('seiyun-motion-owner', provided!);
     else owner = sessionStorage.getItem('seiyun-motion-owner');
   } catch {}
-  return 'seiyun-motion-' + (valid(owner) ? owner : 'unscoped') + ':' + key;
+  const product=q.get('seiyun_product');
+  const validProduct=(v:string|null)=>!!v&&/^[a-z0-9_:-]{1,95}$/i.test(v);
+  let productId=product;
+  try{
+    if(validProduct(product)) sessionStorage.setItem('seiyun-motion-product',product!);
+    else productId=sessionStorage.getItem('seiyun-motion-product');
+  }catch{}
+  return 'seiyun-motion-' + (valid(owner) ? owner : 'unscoped') + ':' +
+    (validProduct(productId)?productId:'default') + ':' + key;
 }
 """)
 # Wrap native persistence calls, leaving the existing project/history logic
