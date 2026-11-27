@@ -118,6 +118,14 @@ end=s.index('        </div>',start)
 s=s[:start]+"""          <button className="btn primary full" onClick={enter}>Go to the library</button>
 """+s[end:]
 p.write_text(s)
+# Embedded users should see their product immediately, not an upstream
+# first-run guided tour covering the editor; native Help remains available.
+p=Path('components/AppTour.tsx')
+s=p.read_text()
+anchor="function tourSeen(tourId: TourId): boolean {"
+assert anchor in s
+s=s.replace(anchor,anchor+"\n  if(new URL(location.href).searchParams.has('seiyun_nonce')) return true;")
+p.write_text(s)
 PY
 
   python3 - <<'PY'
