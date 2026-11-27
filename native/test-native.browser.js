@@ -17,6 +17,22 @@ const harness=['<!doctype html><html><head><meta charset="utf-8"><meta name="vie
  'if(msg.type==="SEIYUN_NATIVE_ERROR")document.querySelector("#status").textContent="ERROR "+msg.error;',
  'if(msg.type==="SEIYUN_NATIVE_SAVE")document.querySelector("#status").dataset.saved=msg.snapshot?"menu":"motion";',
  '});</script></body></html>'].join('\n');
+// Mirror the production Cloudflare _headers matching rules for this integration
+// test, including the native-specific override; a permissive test server would
+// otherwise miss a broken iframe CSP or inline Next hydration.
+const rules=fs.readFileSync(path.join(root,'_headers'),'utf8').split(/\r?\n/);
+function securityHeaders(pathname){
+ const headers={};let matched=false;
+ for(const line of rules){
+  if(!line.trim()||line.trim().startsWith('#'))continue;
+  if(!/^\s/.test(line)){const pattern=line.trim();matched=pattern.endsWith('*')?pathname.startsWith(pattern.slice(0,-1)):pattern===pathname;continue;}
+  if(!matched)continue;
+  const v=line.trim();if(v.startsWith('! ')){delete headers[v.slice(2).toLowerCase()];continue;}
+  const i=v.indexOf(':');if(i<0)continue;const k=v.slice(0,i).toLowerCase(),value=v.slice(i+1).trim();
+  headers[k]=headers[k]?headers[k]+', '+value:value;
+ }
+ return headers;
+}
 const server=http.createServer((req,res)=>{
  const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
  if(pathname==='/native-harness'){res.writeHead(200,{'content-type':'text/html'});res.end(harness);return;}
@@ -24,7 +40,7 @@ const server=http.createServer((req,res)=>{
  if(!filepath.startsWith(root+path.sep)){res.writeHead(403);res.end('forbidden');return;}
  fs.readFile(filepath,(err,data)=>{
   if(err){res.writeHead(404);res.end('not found');return;}
-  res.writeHead(200,{'content-type':type[path.extname(filepath)]||'application/octet-stream','access-control-allow-origin':'*'});res.end(data);
+  res.writeHead(200,{...securityHeaders(pathname),'content-type':type[path.extname(filepath)]||'application/octet-stream','access-control-allow-origin':'*'});res.end(data);
  });
 });
 let browserInstance;
@@ -80,6 +96,8 @@ let browserInstance;
    await page.waitForFunction(()=>document.querySelector('#status').textContent==='LOADED',{timeout:60000});
    const frame=page.frameLocator('#native');
    const overflow=await frame.locator('body').evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+   await page.screenshot({path:path.join(shots,'native-'+mode+'-mobile.png'),fullPage:false});
+   if(overflow>=30) console.log('NATIVE_OVERFLOW',await frame.locator('body').evaluate(()=>Array.from(document.querySelectorAll('*')).filter(e=>{const r=e.getBoundingClientRect();return r.right>innerWidth+10&&r.width>50;}).slice(0,20).map(e=>({tag:e.tagName,cls:String(e.className).slice(0,150),width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right}))));
    assert(overflow<30,mode+' native touch viewport should not overflow horizontally: '+overflow);
    if(mode==='menu'){
      const item=frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).first();
