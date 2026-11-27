@@ -101,8 +101,9 @@ const l=document.querySelector('#mgPageLabel');if(l)l.textContent='Page '+(page+
 const c=document.querySelector('#mgPageCount');if(c)c.textContent=r.pageCount+' page(s)';
 const prev=document.querySelector('#mgPrevPage'),next=document.querySelector('#mgNextPage');if(prev)prev.disabled=page<=0;if(next)next.disabled=page>=r.pageCount-1;
 }
+function ownerFilename(state){return String(state?.branding?.name||'cafe').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,45)||'cafe';}
 function printMenu(){const opts=ensureDraftConfig(),result=renderPages(getDraft(),opts),format=FORMATS[opts.format];
-const head='<meta charset="utf-8"><title>Seiyun Menu</title><link rel="stylesheet" href="'+esc(new URL('menu-gallery.css',document.baseURI).href)+'"><style>@page{size:'+format.print+';margin:0}html,body{margin:0;padding:0;background:white}.mg-print-stage{display:block}.mg-export-page{break-after:page;page-break-after:always;box-shadow:none!important;border-radius:0!important}.mg-export-page:last-child{break-after:auto}</style>';
+const head='<meta charset="utf-8"><title>'+esc((getDraft()?.branding?.name||'Cafe')+' Menu')+'</title><link rel="stylesheet" href="'+esc(new URL('menu-gallery.css',document.baseURI).href)+'"><style>@page{size:'+format.print+';margin:0}html,body{margin:0;padding:0;background:white}.mg-print-stage{display:block}.mg-export-page{break-after:page;page-break-after:always;box-shadow:none!important;border-radius:0!important}.mg-export-page:last-child{break-after:auto}</style>';
 const popup=root.open('','_blank');if(!popup)throw Error('Please allow pop-ups to print your menu.');
 popup.document.write('<!doctype html><html><head>'+head+'</head><body><main class="mg-print-stage">'+result.pages.join('')+'</main></body></html>');popup.document.close();
 let hasPrinted=false;
@@ -140,10 +141,10 @@ const canvas=await root.html2canvas(el,{backgroundColor:null,scale:2,useCORS:tru
 const type=kind==='jpg'?'image/jpeg':'image/png',ext=kind==='jpg'?'jpg':'png';
 const blob=await new Promise(resolve=>canvas.toBlob(resolve,type,kind==='jpg'?.94:undefined));
 if(!blob)throw Error('Browser could not encode your menu image. Try Print / Save PDF.');
-files.push({name:'seiyun-menu-page-'+String(i+1).padStart(2,'0')+'.'+ext,blob});}
+files.push({name:ownerFilename(getDraft())+'-menu-page-'+String(i+1).padStart(2,'0')+'.'+ext,blob});}
 if(files.length===1){downloadBlob(files[0].blob,files[0].name);return;}
 if(typeof root.JSZip!=='function')throw Error('Multi-page export needs ZIP support. Check your connection or use Print / Save PDF.');
-const zip=new root.JSZip();files.forEach(f=>zip.file(f.name,f.blob));downloadBlob(await zip.generateAsync({type:'blob'}),'seiyun-menu-'+kind+'-pages.zip');
+const zip=new root.JSZip();files.forEach(f=>zip.file(f.name,f.blob));downloadBlob(await zip.generateAsync({type:'blob'}),ownerFilename(getDraft())+'-menu-'+kind+'-pages.zip');
 }finally{container.remove();}}
 function updateSettings(fn){const o=ensureDraftConfig();fn(o);if(typeof saveSoon==='function')saveSoon();updatePreview();}
 function bindEvents(){if(typeof document==='undefined')return;
