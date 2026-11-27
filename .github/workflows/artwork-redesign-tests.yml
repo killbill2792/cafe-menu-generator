@@ -53,3 +53,11 @@ jobs:
           name: visual-menu-and-cinematic-evidence
           path: artifacts/*.png
           if-no-files-found: ignore
+
+      - run: tar -czf creative-studio-source.tar.gz studio tests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: creative-studio-snapshot
+          path: creative-studio-source.tar.gz
+          if-no-files-found: ignore
