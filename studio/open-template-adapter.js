@@ -84,7 +84,7 @@ function sourcePage(state,doc,page,selected,format,overrides,pageIndex){
   if(!["text","shape","line","image"].includes(e.type))return "";
   const m=mapped[i],key=m?.kind==="brand"?"brand":m?.kind==="name"&&m.product?"product:"+m.product.id:"source:"+i;
   const geom=boundedOverride(overrides?.[key],{x:N(e.x)*scale+dx,y:N(e.y)*scale+dy,w:N(e.w)*scale,h:N(e.h)*scale,fontSize:font(e)*scale},w,h);
-  const css="position:absolute;left:"+geom.x.toFixed(2)+"px;top:"+geom.y.toFixed(2)+"px;width:"+geom.w.toFixed(2)+"px;height:"+geom.h.toFixed(2)+"px;opacity:"+N(e.opacity,1,0,1)+";transform:rotate("+N(e.rotation,0,-360,360)+"deg);";
+  const css="position:absolute;left:"+Number(geom.x.toFixed(2))+"px;top:"+Number(geom.y.toFixed(2))+"px;width:"+Number(geom.w.toFixed(2))+"px;height:"+Number(geom.h.toFixed(2))+"px;opacity:"+N(e.opacity,1,0,1)+";transform:rotate("+N(e.rotation,0,-360,360)+"deg);";
   const attr='data-native-element="'+i+'" data-layout-key="'+escape(key)+'"';
   if(e.type==="shape")return '<div '+attr+' aria-hidden="true" style="'+css+'background:'+C(e.fill?.color,"transparent")+';border-radius:'+N(e.radius)*scale+'px"></div>';
   if(e.type==="line")return '<div '+attr+' aria-hidden="true" style="'+css+'border-top:'+N(e.width,1,0,30)*scale+'px '+(e.dash==="dashed"?"dashed":"solid")+' '+C(e.color,ink)+'"></div>';
