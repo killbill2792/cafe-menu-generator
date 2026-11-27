@@ -13,7 +13,7 @@ on:
       - 'tests/open-template-adapter.test.js'
       - 'tests/gallery-real-preview.test.js'
       - 'tests/creative-layout.test.js'
-      - 'tests/canvix-menu-adapter.test.js tests/template-fonts.test.js'
+      - 'tests/canvix-menu-adapter.test.js'
       - 'tests/template-fonts.test.js'
       - 'studio/template-fonts.js'
       - 'studio/vendor/canvix/**'
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/open-template-adapter.test.js tests/cinematic-scenes.test.js tests/gallery-real-preview.test.js tests/creative-layout.test.js tests/canvix-menu-adapter.test.js
+      - run: node --test tests/open-template-adapter.test.js tests/cinematic-scenes.test.js tests/gallery-real-preview.test.js tests/creative-layout.test.js tests/canvix-menu-adapter.test.js tests/template-fonts.test.js
   integration:
     runs-on: ubuntu-24.04
     steps:
