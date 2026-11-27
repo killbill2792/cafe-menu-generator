@@ -152,7 +152,7 @@ const prev=document.querySelector('#mgPrevPage'),next=document.querySelector('#m
 }
 function ownerFilename(state){return String(state?.branding?.name||'cafe').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,45)||'cafe';}
 function printMenu(){const opts=ensureDraftConfig(),result=renderPages(getDraft(),opts),format=FORMATS[opts.format];
-const head='<meta charset="utf-8"><title>'+esc((getDraft()?.branding?.name||'Cafe')+' Menu')+'</title><link rel="stylesheet" href="'+esc(new URL('menu-gallery.css',document.baseURI).href)+'"><style>@page{size:'+format.print+';margin:0}html,body{margin:0;padding:0;background:white}.mg-print-stage{display:block}.mg-export-page{break-after:page;page-break-after:always;box-shadow:none!important;border-radius:0!important}.mg-export-page:last-child{break-after:auto}</style>';
+const head='<meta charset="utf-8"><title>'+esc((getDraft()?.branding?.name||'Cafe')+' Menu')+'</title><link rel="stylesheet" href="'+esc(new URL('menu-gallery.css',document.baseURI).href)+'"><link rel="stylesheet" href="'+esc(new URL('open-template-adapter.css',document.baseURI).href)+'"><style>@page{size:'+format.print+';margin:0}html,body{margin:0;padding:0;background:white}.mg-print-stage{display:block}.mg-export-page{break-after:page;page-break-after:always;box-shadow:none!important;border-radius:0!important}.mg-export-page:last-child{break-after:auto}</style>';
 const popup=root.open('','_blank');if(!popup)throw Error('Please allow pop-ups to print your menu.');
 popup.document.write('<!doctype html><html><head>'+head+'</head><body><main class="mg-print-stage">'+result.pages.join('')+'</main></body></html>');popup.document.close();
 let hasPrinted=false;
