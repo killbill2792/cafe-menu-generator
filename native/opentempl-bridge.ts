@@ -1,11 +1,12 @@
 // Seiyun's limited catalog bridge into the FULL upstream OpenTempl editor.
 // All canvas, selection, drag, resize, undo, layers, pagination and export remain upstream.
 import { createDesign, openDesign } from '../io/designs';
-import { newId } from '../doc/design';
+import { newId, DesignDoc } from '../doc/design';
+import * as Y from 'yjs';
+import { thumbnail } from '../export/render';
 import { prepareImage } from '../io/upload';
-import { findTemplate } from '../templates';
+import { findTemplate, type Template } from '../templates';
 import type { Asset, DesignSnapshot, Element, TextElement, ImageElement, Page, Fill } from '../doc/types';
-import type { DesignDoc } from '../doc/design';
 
 type OwnerProduct = { id:string; name?:string; category?:string; ingredients?:string; enabled?:boolean; photos?:string[]; primary?:number; sizes?:{name?:string;price?:number}[] };
 type OwnerPayload = {
@@ -60,6 +61,10 @@ function imageElement(productId:string,assetId:string,x:number,y:number,w:number
     crop:{x:0,y:0,w:1,h:1},
     filters:{brightness:0,contrast:0,saturation:0,temperature:0,tint:0,blur:0,vignette:0,grain:0,preset:'none',duotone:null},
     radius:8,mask:null,border:null};
+}
+let imageCache:Promise<{assets:Asset[];map:Map<string,string>}>|null=null;
+function cachedOwnerImages(owner:OwnerPayload){
+ return imageCache||(imageCache=readOwnerImages(owner));
 }
 async function readOwnerImages(owner:OwnerPayload):Promise<{assets:Asset[]; map:Map<string,string>}> {
   const assets:Asset[]=[],map=new Map<string,string>();
@@ -264,6 +269,45 @@ function createPages(template:DesignSnapshot,owner:OwnerPayload,images:Map<strin
   }
   return {meta:{...template.meta,id:id(),title:main+' • Menu',width,height,unit:'px',createdAt:Date.now(),updatedAt:Date.now()},pageOrder:order,pages,elements};
 }
+// The template's plain source definition is sufficient for owner binding.
+// Do not fetch the upstream demonstration photographs just to discard them.
+function sourceBasis(templ:Template):DesignSnapshot{
+ const pageOrder:string[]=[],pages:Record<string,Page>={},elements:Record<string,Element>={};
+ for(const p of templ.pages){
+  const pid=id(),ids:string[]=[];
+  for(const el of p.elements){const eid=id();elements[eid]={...structuredClone(el),id:eid};ids.push(eid);}
+  pages[pid]={id:pid,name:p.name||'',background:p.background,elementIds:ids,notes:p.notes||'',transition:p.transition||'none',duration:5};pageOrder.push(pid);
+ }
+ return {meta:{id:id(),title:templ.name,width:templ.width,height:templ.height,unit:'px',formatId:templ.formatId,createdAt:Date.now(),updatedAt:Date.now()},pageOrder,pages,elements};
+}
+// Preview the identical native design model used by the editor and export.
+// No persisted throwaway documents, no fake color swatches, no demo imagery.
+// Serialize thumbnail work: a 337-template browser must not decode hundreds
+// of large photos or create hundreds of canvases at once.
+let previewQueue:Promise<unknown>=Promise.resolve();
+const previewCache=new Map<string,Promise<{blob:Blob;adapted:boolean}|null>>();
+export function renderSeiyunTemplateThumb(templateId:string):Promise<{blob:Blob;adapted:boolean}|null>{
+ const owner=ownerFromStorage();if(!owner)return Promise.resolve(null);
+ const cached=previewCache.get(templateId);if(cached)return cached;
+ const next=previewQueue.then(async()=>{
+  const templ=await findTemplate(templateId);if(!templ)return null;
+  const {assets,map}=await cachedOwnerImages(owner);
+  const snapshot=createPages(sourceBasis(templ),{...owner,templateId,saved:undefined},map);
+  const pageId=snapshot.pageOrder[0],page=snapshot.pages[pageId];
+  if(!page)return null;
+  const first={meta:snapshot.meta,pageOrder:[pageId],pages:{[pageId]:page},elements:Object.fromEntries(page.elementIds.map(eid=>[eid,snapshot.elements[eid]]))};
+  const used=new Set(Object.values(first.elements).filter((el):el is ImageElement=>el.type==='image').map(el=>el.assetId));
+  const doc=new DesignDoc(new Y.Doc());
+  try{
+   doc.load(first,assets.filter(a=>used.has(a.id)));
+   const blob=await thumbnail(doc,first,pageId,320);
+   return {blob,adapted:page.notes.startsWith('Catalog-fit')};
+  }finally{doc.destroy();}
+ }).catch(()=>null);
+ previewQueue=next;
+ previewCache.set(templateId,next);
+ return next;
+}
 export async function createSeiyunOwnerDesign(templateId:string):Promise<string|null>{
  const owner=ownerFromStorage();
  if(!owner)return null;
@@ -273,9 +317,8 @@ export async function createSeiyunOwnerDesign(templateId:string):Promise<string|
 }
 async function buildOwnerDesign(owner:OwnerPayload) {
   const templ=await findTemplate(owner.templateId||'food-menu-cafe-nord');
-  const built=templ?await templ.build():undefined;
-  const basis=built?.snapshot||{meta:{id:id(),title:'Menu',width:816,height:1056,unit:'px',createdAt:Date.now(),updatedAt:Date.now()},pageOrder:[],pages:{},elements:{}} as DesignSnapshot;
-  const {assets,map}=await readOwnerImages(owner);
+  const basis=templ?sourceBasis(templ):{meta:{id:id(),title:'Menu',width:816,height:1056,unit:'px',createdAt:Date.now(),updatedAt:Date.now()},pageOrder:[],pages:{},elements:{}} as DesignSnapshot;
+  const {assets,map}=await cachedOwnerImages(owner);
   if(owner.saved?.snapshot&&owner.saved.snapshot.pageOrder?.length){
     const snap=structuredClone(owner.saved.snapshot);
     // Reattach only catalog photos, and refresh bound factual text without altering native user coordinates.
@@ -309,7 +352,8 @@ export function installSeiyunBridge() {
   if(ev.origin!==location.origin||ev.source!==window.parent)return;
   const data=ev.data;if(!data||data.type!=='SEIYUN_NATIVE_INIT'||data.nonce!==nonce)return;
   const owner=safeOwner(data.catalog);
-  sessionStorage.setItem(key,JSON.stringify(owner));
+  imageCache=null;previewCache.clear();
+  try{sessionStorage.setItem(key,JSON.stringify(owner));}catch{send('SEIYUN_NATIVE_ERROR',{error:'The owner catalog exceeds this browser’s session storage quota.'});return;}
   try{const docId=await buildOwnerDesign(owner);send('SEIYUN_NATIVE_LOADED',{docId});location.hash='/d/'+docId;}
   catch(e){send('SEIYUN_NATIVE_ERROR',{error:String(e).slice(0,240)});}
  });
