@@ -178,6 +178,50 @@ s=s.replace("import { Analytics } from '@vercel/analytics/next';","")
 s=s.replace("        <SpeedInsights />","")
 s=s.replace("import { SpeedInsights } from '@vercel/speed-insights/next';","")
 p.write_text(s)
+
+# Pixi v8's normal WebGL init uses runtime code generation. Production CSP
+# deliberately forbids eval; use Pixi's official static CSP-compatible shim.
+renderer=Path('lib/renderer.ts')
+s=renderer.read_text()
+s="import 'pixi.js/unsafe-eval';\n"+s
+a="    } catch {\n      return;\n    }\n\n    if (this.destroyed || !this.app?.renderer) return;"
+assert a in s
+s=s.replace(a,"    } catch (error) {\n      console.error('Native Pixi renderer initialization failed', error);\n      throw error;\n    }\n\n    if (this.destroyed || !this.app?.renderer) return;",1)
+renderer.write_text(s)
+
+# Partition the native motion editor's project index, media database and
+# autosaved settings by signed-in café owner; no shared default project.
+# Scope is stable across Next client-side navigation and full-route reloads.
+scope=Path('lib/seiyunStorage.ts')
+scope.write_text("""export function ownerStorageKey(key: string): string {
+  if (typeof window === 'undefined') return key;
+  const q = new URL(location.href).searchParams;
+  if (window.parent === window) return key;
+  const provided = q.get('seiyun_owner');
+  const valid = (v: string | null) => !!v && /^[a-f0-9-]{36}$/i.test(v);
+  let owner = provided;
+  try {
+    if (valid(provided)) sessionStorage.setItem('seiyun-motion-owner', provided!);
+    else owner = sessionStorage.getItem('seiyun-motion-owner');
+  } catch {}
+  return 'seiyun-motion-' + (valid(owner) ? owner : 'unscoped') + ':' + key;
+}
+""")
+# Wrap native persistence calls, leaving the existing project/history logic
+# intact. No change to Seiyun's parent Supabase storage/session.
+for file in [Path('lib/projects.ts'),Path('lib/scenePersist.ts'),Path('lib/three3dPersist.ts'),Path('store/useSceneStore.ts')]:
+    import re
+    src=file.read_text()
+    src="import { ownerStorageKey } from '@/lib/seiyunStorage';\n"+src
+    # The original functions use simple identifiers or one-level key helpers.
+    src=re.sub(r'localStorage\.(getItem|removeItem)\((\w+(?:\([^()]*\))?)\)',r'localStorage.\1(ownerStorageKey(\2))',src)
+    src=re.sub(r'localStorage\.setItem\((\w+(?:\([^()]*\))?),',r'localStorage.setItem(ownerStorageKey(\1),',src)
+    file.write_text(src)
+p=Path('lib/assetDb.ts')
+s=p.read_text()
+s="import { ownerStorageKey } from './seiyunStorage';\n"+s
+s=s.replace("indexedDB.open(DB_NAME, 1)","indexedDB.open(ownerStorageKey(DB_NAME), 1)")
+p.write_text(s)
 PY
 
   # Official upstream static export omits the server-only ffmpeg handler.
