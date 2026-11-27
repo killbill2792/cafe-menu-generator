@@ -64,7 +64,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
    const bytes=fs.readFileSync(await v.path());
    videoBytes=bytes.length;videoType=v.suggestedFilename();
    assert(bytes.length>1000,'video contains actual encoded frames');
-   assert(/\\.(mp4|webm)$/.test(videoType),'native video extension is accurate');
+   assert(/\.(mp4|webm)$/.test(videoType),'native video extension is accurate');
  }
  console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','24 gallery options','template switch','live Motion Lab frames','motion selection','GIF download',...(supports?['native video export']:[])],gifBytes:data.byteLength,videoBytes,videoType,pageErrors:errors}));
  assert.deepEqual(errors,[],'no uncaught browser exceptions');
