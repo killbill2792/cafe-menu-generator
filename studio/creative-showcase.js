@@ -53,6 +53,7 @@ async function mount(host,state,cfg,core,notify){
  scene.raf=requestAnimationFrame(advance);
 }
 function toggle(){if(!scene)return;paused=!paused;}
+function pauseForEdit(){if(scene)paused=true;}
 function update(state,cfg,core){if(scene){scene.cfg=cfg;}}
 function loadImage(src){return new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=()=>reject(Error('Product photograph could not load with export permission. Check Storage access/CORS or upload a PNG directly.'));img.src=src;});}
 async function assets(state,cfg,core){const p=productFor(state,cfg,core),src=core.selectedShowcasePhoto(p);if(!p||!src)throw Error('Upload or select a product photograph first.');
@@ -145,5 +146,5 @@ async function removeWhiteBackground(state,cfg,core){
  p.photos.push(url);p.showcasePrimary=p.photos.length-1;
  return {updated:true,message:'Saved a transparent copy. The original photograph is unchanged.'};
 }
-window.SeiyunShowcase={mount,destroy,toggle,update,downloadVideo,downloadGif,downloadStill,removeWhiteBackground};
+window.SeiyunShowcase={mount,destroy,toggle,pauseForEdit,update,downloadVideo,downloadGif,downloadStill,removeWhiteBackground};
 })();
