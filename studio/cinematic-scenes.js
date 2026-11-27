@@ -41,7 +41,7 @@ function resolve(p,brand={},opts={}){
  const matched=cues.filter(x=>x.keys.some(k=>description.includes(k))),major=matched[0]||cues[8];
  const scene=registry.find(x=>x.id===opts.sceneId)||registry.find(x=>x.id===major.scene)||registry[0];
  return {id:scene.id,name:scene.name,description:scene.description,
- palette:{background:hex(opts.background==='#2e1815'?undefined:opts.background,major.background),accent:hex(opts.accent,major.accent)},
+ palette:{background:hex(opts.background==='#2e1815'?undefined:opts.background,scene.id==='product-spotlight'?'#e8d3b6':major.background),accent:hex(opts.accent,major.accent)},
  ingredients:matched.slice(0,3).map(x=>({label:x.name,accent:x.accent})),
  duration:clamp(opts.duration,3,15,7),speed:clamp(opts.speed,.3,2.5,1),
  layers:{hero:normalizeLayer(opts.layerOverrides?.hero,{x:50,y:46,scale:1,fontSize:64}),
@@ -74,7 +74,12 @@ function render(p,brand={},opts={}){
 }
 function drawFrame(ctx,img,p,brand,opts,progress,w,h){
  const c=resolve(p,brand,opts),f=frameAt(progress,c.id,c.speed),acc=c.palette.accent;
- ctx.clearRect(0,0,w,h);ctx.fillStyle=c.palette.background;ctx.fillRect(0,0,w,h);
+ ctx.clearRect(0,0,w,h);
+ if(c.id==='product-spotlight'){
+  const backdrop=ctx.createLinearGradient(0,0,w,h);backdrop.addColorStop(0,'#fbecd3');
+  backdrop.addColorStop(1,c.palette.background);ctx.fillStyle=backdrop;
+ }else ctx.fillStyle=c.palette.background;
+ ctx.fillRect(0,0,w,h);
  const g=ctx.createRadialGradient(w*f.lightX/100,h*.44,1,w*f.lightX/100,h*.44,h*.68);
  g.addColorStop(0,acc+"90");g.addColorStop(1,acc+"00");ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
  ctx.save();ctx.translate(w/2,h*.46);ctx.rotate(f.ringRotation*Math.PI/180);ctx.lineWidth=w*.003;ctx.strokeStyle=acc+"50";
@@ -83,8 +88,19 @@ function drawFrame(ctx,img,p,brand,opts,progress,w,h){
   px=w*(.12+.76*((i*37%97)/97)),py=h*(.18+.56*((i*53%89)/89))+Math.sin(ph)*h*.013;
   ctx.fillStyle=acc+Math.round(65+100*Math.abs(Math.sin(ph))).toString(16).padStart(2,"0");
   ctx.beginPath();ctx.arc(px,py,w*(.002+(i%4)*.0012),0,2*Math.PI);ctx.fill();}
- ctx.textAlign="center";ctx.fillStyle="#fff8ec";ctx.font="bold "+Math.round(w*.052)+"px Georgia,serif";
+ ctx.textAlign="center";ctx.fillStyle=c.id==='product-spotlight'?'#35271f':'#fff8ec';ctx.font="bold "+Math.round(w*.052)+"px Georgia,serif";
  ctx.fillText(String(brand.name||"Your Café"),w/2,h*.085,w*.86);
+ if(c.ingredients?.length){
+  const spots=[[.16,.26],[.79,.40],[.23,.62]];
+  ctx.save();ctx.font='bold '+Math.round(w*.023)+'px Arial';ctx.textAlign='center';
+  c.ingredients.slice(0,3).forEach((ingredient,i)=>{
+    const [nx,ny]=spots[i],label=String(ingredient.label).toUpperCase();
+    const tw=ctx.measureText(label).width,pad=w*.025,rh=h*.032,rw=tw+pad*2;
+    ctx.fillStyle='rgba(0,0,0,.29)';ctx.fillRect(w*nx-rw/2,h*ny-rh/2,rw,rh);
+    ctx.strokeStyle=acc+'b3';ctx.lineWidth=1;ctx.strokeRect(w*nx-rw/2,h*ny-rh/2,rw,rh);
+    ctx.fillStyle='#fff5e6';ctx.fillText(label,w*nx,h*ny+h*.007);
+  });ctx.restore();
+ }
  if(img?.width){
   const lay=c.layers.hero,k=Math.min(w*.76/img.width,h*.54/img.height)*lay.scale*f.heroScale;
   ctx.save();ctx.translate(w*lay.x/100,h*lay.y/100+h*f.heroY/100);
@@ -94,16 +110,16 @@ function drawFrame(ctx,img,p,brand,opts,progress,w,h){
  const lay=c.layers.title;
  ctx.fillStyle=acc;ctx.font="bold "+Math.round(w*.022*lay.scale)+"px Arial";
  ctx.fillText("CRAFTED TO BE SAVORED",w*lay.x/100,h*(lay.y-8)/100,w*.86);
- ctx.fillStyle="#fff9ec";ctx.font="bold "+Math.round(w*lay.fontSize/1080*lay.scale)+"px Georgia,serif";
+ ctx.fillStyle=c.id==='product-spotlight'?'#33241b':'#fff9ec';ctx.font="bold "+Math.round(w*lay.fontSize/1080*lay.scale)+"px Georgia,serif";
  let rows=[],line="";
  for(const word of String(p?.name||"Your drink").split(/\s+/)){
   const test=(line?line+" ":"")+word;
   if(ctx.measureText(test).width>w*.86&&line){rows.push(line);line=word}else line=test;
  }if(line)rows.push(line);
  rows.slice(0,2).forEach((v,i)=>ctx.fillText(v,w*lay.x/100,h*(lay.y+i*4)/100,w*.86));
- ctx.fillStyle="#eddbc9";ctx.font=Math.round(w*.023)+"px Arial";
+ ctx.fillStyle=c.id==='product-spotlight'?'#563a2b':'#eddbc9';ctx.font=Math.round(w*.023)+"px Arial";
  ctx.fillText(String(p?.ingredients||"").slice(0,85),w*lay.x/100,h*(lay.y+7)/100,w*.83);
- if(p?.sizes?.[0]?.price!==undefined){ctx.fillStyle="#fff";ctx.font="bold "+Math.round(w*.038)+"px Arial";
+ if(p?.sizes?.[0]?.price!==undefined){ctx.fillStyle=c.id==='product-spotlight'?'#33241b':'#fff';ctx.font="bold "+Math.round(w*.038)+"px Arial";
  ctx.fillText("$"+Number(p.sizes[0].price).toFixed(2),w*lay.x/100,h*(lay.y+12)/100,w*.86)}
 }
 return {registry,resolve,normalizeLayer,frameAt,render,drawFrame,photoUrl};
