@@ -44,7 +44,18 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.locator('[data-cs-zoom="zoom"]').evaluate(el=>{el.value='165';el.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.match(await page.locator('[data-menu-product="ref-01"] img').first().getAttribute('style'),/scale\(1\.65\)/,'real photo is zoomed without changing its box');
  await page.locator('[data-cs-action="designs"]').click();
- assert((await page.locator('.cs-design').count())>=45,'real template packs added to 24 legacy menu designs');
+ assert.equal(await page.locator('.cs-design').count(),31,'gallery displays 31 genuinely different layouts, not duplicate palette cards');
+ assert.equal(await page.locator('[data-cs-variant]').count(),24,'all 24 legacy color treatments remain available as swatches');
+ await page.screenshot({path:'artifacts/real-menu-design-gallery.png',fullPage:true});
+ await page.locator('#csDesignSearch').fill('canvix');
+ assert.equal(await page.locator('.cs-design-entry:visible').count(),2,'search finds two actual Canvix café menus, not 366 unrelated designs');
+ await page.locator('#csDesignSearch').fill('');
+ await page.locator('[data-cs-filter="imported"]').click();
+ assert.equal(await page.locator('.cs-design-entry:visible').count(),23,'source library filter exposes 21 OpenTempl and two Canvix originals');
+ await page.locator('[data-cs-filter="all"]').click();
+ await page.locator('[data-cs-design="canvix:cafe-menu"]').click();
+ assert.equal(await page.locator('#csArtPage [data-opentempl-source="cafe-menu"]').count(),1,'genuine Canvix café board opens as live menu');
+ await page.locator('[data-cs-action="designs"]').first().click();
  assert((await page.locator('[data-cs-design="opentempl:food-menu-checker-diner"] .mg-export-page').count())===1,'imported template thumbnail is real rendered art');
  await page.locator('[data-cs-design="opentempl:food-menu-checker-diner"]').click();
  assert((await page.locator('#csArtPage [data-opentempl-source="food-menu-checker-diner"]').count())===1,'real imported design chosen');
@@ -78,7 +89,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  if(!(afterSize>beforeSize))console.log('resize diagnostics',await page.evaluate(()=>({d:SeiyunLayoutEditor.diagnostics,size:draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-checker-diner']?.brand,markup:document.querySelector('#csArtPage [data-layout-key="brand"]')?.outerHTML?.slice(0,500)})));
  assert(afterSize>beforeSize,'pulling the corner enlarges the actual saved brand title');
  await page.locator('[data-cs-action="designs"]').click();
- await page.locator('[data-cs-design="photo-cards-dark"]').click();
+ await page.locator('[data-cs-variant="photo-cards-dark"]').click();
  assert((await page.locator('#csArtPage').innerHTML()).includes('mg-layout-photo-cards'),'template switch updates actual page');
  await page.locator('[data-cs-tab="showcase"]').click();
  await page.locator('.cs-hero-img').waitFor({timeout:12000});
@@ -120,7 +131,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
    assert(bytes.length>1000,'video contains actual encoded frames');
    assert(/\.(mp4|webm)$/.test(videoType),'native video extension is accurate');
  }
- console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','45 gallery options','template switch','single cinematic hero','animated environment','scene selection','GIF download',...(supports?['native video export']:[])],gifBytes:data.byteLength,videoBytes,videoType,pageErrors:errors}));
+ console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','31 distinct layouts and 47 looks','template switch','single cinematic hero','animated environment','scene selection','GIF download',...(supports?['native video export']:[])],gifBytes:data.byteLength,videoBytes,videoType,pageErrors:errors}));
  // The original image/PDF features must still work with an imported native menu.
  await page.locator('[data-cs-tab="menu"]').click();
  await page.evaluate(src=>{
@@ -144,7 +155,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  assert.equal(await popup.locator('[data-menu-product]').count(),2,'PDF/Print popup uses owner product data');
  await popup.close();
  assert.deepEqual(errors,[],'no uncaught browser exceptions');
- const mobile=await browser.newPage({viewport:{width:390,height:800}});
+ const mobile=await browser.newPage({viewport:{width:390,height:800},hasTouch:true,isMobile:true,deviceScaleFactor:1});
  await mobile.route('**/cloud.js',route=>route.fulfill({contentType:'application/javascript',body:'window.SEIYUN_CONFIG={};window.seiyunCloud=null;'}));
  await mobile.route('**/cloud-bridge.js',route=>route.fulfill({contentType:'application/javascript',body:''}));
  await mobile.route(/^https:\/\//,route=>route.abort());
@@ -154,5 +165,22 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await mobile.screenshot({path:'artifacts/menu-generator-mobile.png',fullPage:true});
  assert(overflow<=5,'mobile interface should not horizontally overflow: '+overflow);
  console.log('Mobile horizontal overflow:',overflow);
+ await mobile.locator('[data-cs-action="designs"]').first().click();
+ await mobile.locator('[data-cs-design="opentempl:food-menu-checker-diner"]').click();
+ const title=mobile.locator('#csArtPage [data-layout-key="brand"]').first();
+ await title.tap();
+ const handle=mobile.locator('.moveable-control-box .moveable-se').first();
+ await handle.scrollIntoViewIfNeeded();
+ const beforeMobile=await title.evaluate(el=>Number.parseFloat(el.style.width));
+ const hb=await handle.boundingBox();
+ assert(hb&&hb.width>0,'touch resize corner visible on a 390px display');
+ const touch=await mobile.context().newCDPSession(mobile);
+ const tx=hb.x+hb.width/2,ty=hb.y+hb.height/2;
+ await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty,id:0}]});
+ for(let step=1;step<=6;step++)await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:tx+step*2,y:ty+step*1,id:0}]});
+ await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ const mobileBrand=await mobile.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-checker-diner']?.brand);
+ assert(mobileBrand&&mobileBrand.w>beforeMobile,'real touch corner gesture resizes the exported title');
+ assert(mobileBrand.x+mobileBrand.w<=816&&mobileBrand.y+mobileBrand.h<=1056,'touch sizing cannot push artwork outside page');
  await browser.close();await new Promise(resolve=>server.close(resolve));
 })().catch(e=>{console.error(e);server.close();setTimeout(()=>process.exit(1),2000);});
