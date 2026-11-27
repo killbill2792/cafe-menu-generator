@@ -131,6 +131,25 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
    assert(bytes.length>1000,'video contains actual encoded frames');
    assert(/\.(mp4|webm)$/.test(videoType),'native video extension is accurate');
  }
+ 
+ // Verify that plain white product-photo backgrounds disappear automatically
+ // in the actual DOM preview, without uploading or mutating the original image.
+ const whitePhoto=await page.evaluate(()=>{
+   const c=document.createElement('canvas');c.width=120;c.height=180;const ctx=c.getContext('2d');
+   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,120,180);
+   ctx.fillStyle='#bf814b';ctx.fillRect(30,38,60,113);
+   ctx.fillStyle='#ead4af';ctx.fillRect(30,38,60,30);
+   return c.toDataURL('image/png');
+ });
+ await page.evaluate(src=>{draft.products[0].photos=[src];draft.products[0].primary=0;draft.products[0].showcasePrimary=0;render();},whitePhoto);
+ await page.locator('.cs-hero-img').waitFor({timeout:12000});
+ await page.waitForFunction(original=>{const img=document.querySelector('.cs-hero-img');return img?.complete&&img.src!==original;},whitePhoto,{timeout:12000});
+ const cornerAlpha=await page.evaluate(()=>{
+  const img=document.querySelector('.cs-hero-img'),c=document.createElement('canvas');c.width=120;c.height=180;
+  const ctx=c.getContext('2d');ctx.drawImage(img,0,0,120,180);return ctx.getImageData(0,0,1,1).data[3];
+ });
+ assert.equal(cornerAlpha,0,'auto cutout removes the photo white rectangle in the visible live preview');
+ await page.screenshot({path:'artifacts/cinematic-auto-cutout.png',fullPage:true});
  console.log(JSON.stringify({passed:['two features','direct brand edit','real photo zoom','31 distinct layouts and 47 looks','template switch','single cinematic hero','animated environment','scene selection','GIF download',...(supports?['native video export']:[])],gifBytes:data.byteLength,videoBytes,videoType,pageErrors:errors}));
  // The original image/PDF features must still work with an imported native menu.
  await page.locator('[data-cs-tab="menu"]').click();
