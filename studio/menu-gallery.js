@@ -117,6 +117,18 @@ const items=productsOf(state),capacity=capacityFor(state,opts),groups=paginate(i
 return {pageCount:groups.length,productCount:items.length,capacity,pages:groups.map((g,i)=>pageHTML(state,opts,g,i,groups.length)),options:opts};}
 function getDraft(){return typeof draft!=='undefined'?draft:null;}
 function ensureDraftConfig(){const state=getDraft();if(!state)return {...DEFAULT,photoSizeByProduct:{}};state.menuArtwork={...getSettings(state)};return state.menuArtwork;}
+function distinctLayouts(){
+ const byFamily=new Map(),result=[];
+ for(const t of REGISTRY){
+  if(t.source==='opentempl'||t.source==='canvix'){
+   result.push({...t,looks:[t],isSourceDesign:true});
+  }else{
+   if(!byFamily.has(t.layout))byFamily.set(t.layout,{...t,title:(FAMILY.find(f=>f.id===t.layout)?.name||t.title),looks:[],isSourceDesign:false});
+   byFamily.get(t.layout).looks.push(t);
+  }
+ }
+ return [...result,...byFamily.values()];
+}
 function thumbnailHTML(state,t){
  const fmt=t.recommendedFormat||getSettings(state).format||'letter';
  const rendered=renderPages(state,{templateId:t.id,format:fmt});
@@ -219,7 +231,7 @@ if(ev.target.id==='mgPhotoProduct'){const inp=document.querySelector('#mgProduct
 if(inp){inp.disabled=!ev.target.value;inp.value=ev.target.value?(o.photoSizeByProduct[ev.target.value]||o.imageSpace):o.imageSpace;}if(v)v.textContent=inp.value+'%';}
 });
 }
-root.SeiyunMenuGallery={registry:REGISTRY,formats:FORMATS,sources:SOURCE,defaults:DEFAULT,productsOf,renderPages,thumbnailHTML,capacityFor,getSettings,printMenu,exportImages,currentPage:0};
+root.SeiyunMenuGallery={registry:REGISTRY,formats:FORMATS,sources:SOURCE,defaults:DEFAULT,productsOf,renderPages,thumbnailHTML,distinctLayouts,capacityFor,getSettings,printMenu,exportImages,currentPage:0};
 root.renderMenuGallery=renderMenuGallery;
 if(typeof document!=='undefined')bindEvents();
 })(typeof window!=='undefined'?window:globalThis);
