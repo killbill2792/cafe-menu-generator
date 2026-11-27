@@ -134,3 +134,24 @@ body:has(.cs-app){margin:0;background:#f7f3ec;color:var(--cs-brown);font-family:
 .cs-app .mg-export-page [data-layout-key]{cursor:move;touch-action:none}
 .cs-app .ot-list-grid .ot-list-item[data-layout-key]{touch-action:none}
 .cs-app .cs-ad-stage [data-scene-layer]{cursor:move;touch-action:none}
+
+/* Gallery is organized by genuinely different source layouts. Colour variants
+   remain accessible as swatches on the same composition, not duplicate cards. */
+.cs-design-filters{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 12px}
+.cs-design-filters button{font:700 11px/1.25 'DM Sans',Arial,sans-serif;padding:8px 12px;border:1px solid #dac6b1;border-radius:22px;background:#fdf8f1;color:#624937;cursor:pointer}
+.cs-design-filters button.active{background:#65402d;color:#fff5e9;border-color:#65402d}
+.cs-design-filters button:focus-visible,.cs-look-chip:focus-visible{outline:3px solid #be7749;outline-offset:2px}
+.cs-design-counter{font:600 11px 'DM Sans',Arial,sans-serif;color:#7c6553;margin:7px 0}
+#csDesignEmpty{font:600 13px 'DM Sans',Arial,sans-serif;color:#7b4b36;padding:12px}
+.cs-designs .cs-panel-head p{font:400 11px/1.45 'DM Sans',Arial,sans-serif;color:#7c6655;margin:5px 0 0}
+.cs-design-entry{display:flex;flex-direction:column;min-width:0;gap:6px}
+.cs-design-entry[hidden]{display:none!important}
+.cs-design-entry .cs-design{width:100%;min-height:230px;align-content:start;grid-auto-rows:max-content;box-sizing:border-box}
+.cs-design-entry .cs-design-title{display:block;font:750 12px/1.25 'DM Sans',Arial,sans-serif;min-height:24px}
+.cs-design-entry .cs-template-category{display:block;font:600 9px/1.3 'DM Sans',Arial,sans-serif;letter-spacing:.04em;opacity:.75}
+.cs-look-options{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:2px}
+.cs-look-chip{display:flex;align-items:center;gap:4px;cursor:pointer;border:1px solid #e2d4c6;background:#fffefd;color:#654d40;padding:5px;border-radius:8px;font:700 10px 'DM Sans',Arial,sans-serif}
+.cs-look-chip.active{border-color:#8e4c36;box-shadow:0 0 0 2px #8e4c3622}
+.cs-look-chip i{display:block;width:12px;height:12px;border:1px solid #bba18d;border-radius:4px}
+.cs-design-grid{grid-template-columns:repeat(auto-fill,minmax(185px,1fr))!important;max-height:640px!important}
+@media(max-width:600px){.cs-design-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.cs-design-entry .cs-design{min-height:195px}.cs-look-chip{font-size:9px;padding:4px 3px}.cs-look-chip i{width:9px;height:9px}.cs-design-entry .cs-design-title{font-size:11px}.cs-design-filters{gap:5px}.cs-design-filters button{font-size:10px;padding:7px 9px}}
