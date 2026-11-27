@@ -114,6 +114,7 @@ function showcaseUI(){
  '<div class="cs-showcase-grid"><section class="cs-showcase-tools"><label class="cs-field">Featured drink<select id="csProductSelect">'+products.map(x=>'<option value="'+esc(x.id)+'" '+(p?.id===x.id?'selected':'')+'>'+esc(x.name||'New drink')+'</option>').join('')+'</select></label>'+
  '<strong>Choose the hero photo</strong><div class="cs-photo-thumbs">'+(p?.photos?.length?p.photos.map((url,i)=>'<button data-cs-ad-photo="'+i+'" class="'+(photo===url?'selected':'')+'"><img src="'+esc(url)+'" alt="Photo '+(i+1)+'"></button>').join(''):'<p>No photo uploaded yet.</p>')+'</div>'+
  '<button class="cs-btn primary" data-cs-action="ad-upload">+ Add or replace photograph</button>'+
+ '<label class="cs-check cs-cutout-option"><input type="checkbox" id="csAutoCutout" '+(cfg.autoCutout?'checked':'')+'> Automatically isolate drinks photographed on plain white backgrounds</label>'+
  '<strong>Cinematic scene styles</strong><div class="cs-cinematic-options">'+(scenes?.registry||[]).map(scene=>
  '<button type="button" data-cs-motion="'+esc(scene.id)+'" class="cs-scene-choice '+(selected===scene.id?'selected':'')+'" aria-pressed="'+(selected===scene.id)+'">'+
  '<span class="cs-scene-choice-preview choice-'+esc(scene.id)+'"><span class="cs-scene-choice-glow"></span>'+(photo?'<img class="cs-scene-choice-img" src="'+esc(photo)+'" alt="">':'')+'</span><b>'+esc(scene.name)+'</b><small>'+esc(scene.description)+'</small></button>').join('')+'</div>'+
@@ -220,6 +221,7 @@ document.addEventListener('change',async ev=>{
  if(el.id==='csShowLogo'){draft.branding={...branding(),showLogo:el.checked};save();render();}
  if(el.id==='csLogoFile'){const file=el.files?.[0];el.value='';if(!file)return;try{if(!window.seiyunCloud?.upload)throw Error('Online login required for logo upload');const url=await window.seiyunCloud.upload(file);draft.branding={...branding(),logoUrl:url,showLogo:true};save();render();}catch(e){notify('Logo upload failed: '+e.message,true);}}
  if(el.id==='csProductSelect'){draft.showcaseArtwork={...showcase(),productId:el.value};save();render();}
+ if(el.id==='csAutoCutout'){draft.showcaseArtwork={...showcase(),autoCutout:el.checked};save();render();}
  if(el.id==='csAdColor'){draft.showcaseArtwork={...showcase(),background:el.value};save();render();}
  if(el.id==='csAdSpeed'){draft.showcaseArtwork={...showcase(),speed:Number(el.value)};save();window.SeiyunShowcase?.update?.(draft,showcase(),core);}
  if(el.id==='csAdDuration'){draft.showcaseArtwork={...showcase(),duration:Number(el.value)};save();}
