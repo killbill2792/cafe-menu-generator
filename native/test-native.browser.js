@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('fs'),http=require('http')
 const root=path.resolve(__dirname,'../studio');
 const img='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGM83urOgA0wYRUdtBIAP0kBo91cRVwAAAAASUVORK5CYII=';
 const type={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.wasm':'application/wasm','.woff2':'font/woff2','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.glb':'model/gltf-binary'};
-const harness=['<!doctype html><html><head><meta charset="utf-8"></head><body><header id="status">Starting…</header>',
+const harness=['<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><header id="status">Starting…</header>',
  '<iframe id="native" style="width:100%;height:90vh"></iframe><script>',
  'const mode=new URLSearchParams(location.search).get("mode")||"menu",nonce="test-"+mode;',
  'const frame=document.querySelector("iframe");let sent=false;',
