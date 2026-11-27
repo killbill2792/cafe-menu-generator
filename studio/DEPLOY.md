@@ -1,68 +1,61 @@
-# Deploy Seiyun Menu Studio — owner checklist
+# Deploy and verify Seiyun Creative Studio (export-first)
 
-This is a static web app with **zero mandatory extra subscriptions**, using an already-configured Supabase project for data and images. The photo-first design shows the full cup on both displays. **User still must connect Cloudflare Pages and create the owner sign-in**; no public URL exists until that happens.
+> **Current state:** Feature changes live on branch `feat/real-template-browser-cinematic-hero` and PR #5, **not verified on the production site**. Only report the owner-facing product as delivered after signed-in testing and a confirmed Cloudflare deployment. Read `agent.md`, `specs/0003-real-template-library-wysiwyg.md` and `specs/0004-cinematic-product-scenes.md` first.
 
-## Step 1 — Publish your GitHub repository on Cloudflare Pages
-1. Visit https://dash.cloudflare.com/ and create/sign into a FREE Cloudflare account.
-2. Workers & Pages → Create application → Pages → **Connect to Git**.
-3. Authorize the GitHub repository **killbill2792/cafe-menu-generator**.
-4. Select **main** as the production branch.
-5. Framework: **None**; Build command: leave blank; Build output directory: **studio**.
-6. Deploy. Cloudflare gives a free HTTPS address of the form \`https://YOUR-SITE.pages.dev\`. Do not add a paid domain.
+## What the owner is using
 
-## Step 2 — Configure Supabase Auth confirmation URLs
-Visit https://supabase.com/dashboard/project/tfknuqbaahesuqugfaib/auth/url-configuration and set:
-- **Site URL**: the exact Cloudflare Pages HTTPS address.
-- **Redirect URLs**: the same exact address (and its optional trailing slash).
-Do not disclose service-role keys or database passwords. The frontend contains ONLY a publishable key, protected by database RLS.
+The two primary owner tools are **Menu Generator** and **Product Showcase**. Both are visual design/preview workspaces that create **portable files**. The owner has existing printing, online distribution and digital display systems; **do not require publishing our site, managing TVs or subscribing to signage software** to use these files.
 
-## Step 3 — Give the owner access
-1. Visit your Cloudflare URL on a laptop.
-2. Click **Create owner account**, enter the owner's real email/password.
-3. Confirm the account through the email link (if Supabase prompts for verification).
-4. Sign in on the Cloudflare page.
+1. Sign in with the existing authorized Supabase owner account.
+2. Catalog/products, ingredients, pricing, brand and uploaded photos populate automatically. Keep original photos; do not substitute vendor demo photography.
+3. Choose a **real rendered menu layout** from the gallery, or a one-drink cinematic scene. Tap to edit/drag/resize directly on the artwork, not a stack of per-screen forms.
+4. Choose output format and download: browser **Print / Save as PDF**, PNG, JPEG, multi-page ZIP, or scene GIF/MP4/WebM as browser supports.
+5. Use the saved files anywhere—print shop, website, third-party signage, social, email. The old publication/TV functions remain for backward compatibility only.
 
-If registration is disabled in Supabase Auth, first invite/create the owner in your project's Authentication → Users panel. Do not use the Supabase database password as the owner password.
+## Cloudflare production
 
-**After creating the owner account, disable public signups** in Supabase Auth settings or use invite-only registration to avoid unrelated users consuming the free project's storage. Existing owner login remains available.
+The previously deployed site is **https://cafe-menu-generator.raj-techai2026.workers.dev/** (Cloudflare Workers domain). The existing GitHub repository is `killbill2792/cafe-menu-generator`, and the static output is rooted at `studio/`.
 
-## Step 4 — Set up the first menu
-- The editor starts with a best-effort transcription of the existing 23-item Seiyun menu photograph. **Verify every name, ingredient, size and price before publishing.** No photos are automatically assigned to the wrong drink.
-- Click a drink **directly on Screen 1** to change it; **Upload photo** shows the whole cup (PNG/JPG/WebP/AVIF accepted).
-- Verify visually on **Preview**: every menu item visible at once on Screen 1; Screen 2 rotates only photographed products.
-- Click **Publish menu**. It creates a new revision while preserving previous published data for rollback.
+1. Merge an approved, tested PR into the production branch after the owner approves. **GitHub CI success alone never proves the Worker deployed the new commit.**
+2. In Cloudflare Workers & Pages, inspect the Worker deployment revision and its Git/CI connection. Deploy the exact merged SHA if no integration exists. Do not assume a push causes a rollout.
+3. Open the exact production URL on desktop and a mobile device. Confirm that the owner sees **Menu Generator**, **Product Showcase**, **31 distinct layouts/47 combinations**, real previews and all five cinematic scenes. If still 24 swatches, Cloudflare is running old code.
+4. Verify downloaded files are current and can be opened outside the application; not just rendering within the browser.
 
-## Step 5 — Open the live TV links
-- Go to **Published** in the owner studio.
-- Click the **Complete visual menu** screen to open its live link; copy that URL to portrait TV 1.
-- Click the **Animated product showcase** screen to open its live link; copy that URL to portrait TV 2.
-- Other screens can be added or reassigned under **Screens**. Published screen URLs contain a public owner ID and screen ID; they never contain passwords.
-- The published menu is read-only on TV. Both URLs check for new published revisions every **30 seconds**, and a temporary refresh outage keeps the last successfully loaded menu visible. Draft changes never appear before Publish.
+No new database, queue, compute service, paid video provider, background agent or TV player is required by this PR.
 
-## Validation / limitations
-- Tested in headless Chromium using a simulated signed-in owner: 23/23 items, direct edit, draft save, preview, and publish. Database privileges/RLS verified against the connected Supabase project.
-- Live account signup/email confirmation, real image upload to Supabase from the deployed URL, Cloudflare connection, and Samsung TV behavior **still need real-world verification**.
-- Supabase product images are public by design; upload only content authorized for display.
-- The online app needs network access to first load; after loading, a brief API outage preserves its last successful published snapshot. Offline boot after TV restart is not guaranteed.
-- Free-tier services have limits; do not assume 24/7 uptime SLA or free unlimited bandwidth/storage.
-- This app does not generate liquid-pouring videos from one still photo; current showcase uses restrained photographic motion without cropping.
+## Supabase security and owner checks
+
+Use the already-configured owner-scoped Supabase Auth, `studio_private` draft, RLS-protected catalog and existing Storage. Do not create duplicate login/accounts or move to Canvix/another editor's database. Do not place any service-role or database password in browser scripts. The frontend may contain only the existing publishable Supabase credential, with tenant access enforced by RLS.
+
+For Auth redirects, the Supabase URL Configuration Site URL and allowed Redirect URLs must match **https://cafe-menu-generator.raj-techai2026.workers.dev/**. Keep email confirmation/invite policy as the owner has authorized; don't bypass it for testing.
+
+### Release evidence checklist
+
+- [ ] **Owner sign-in** on the real Cloudflare domain; confirm correct already-owned menu names, price tiers, ingredients, brands and 23 reference products (no duplication).
+- [ ] **Real photo upload** to the existing owner folder: PNG/JPEG/WebP/HEIC as supported; actual photo loads and its Storage URL allows in-browser export without canvas CORS tainting.
+- [ ] **Draft re-open** after browser reload: template selection, photo zoom/pan, brand edits, and design-only drag/resize persist; no accidental product price mutations.
+- [ ] **Menu flow**: browse all 31 layouts, filter/search, choose Canvix/OpenTempl source, inspect each native page, download PDF/PNG/JPG/multi-page ZIP. Verify original photos and full uncropped cups.
+- [ ] **Showcase**: Saffron and Matcha photos produce visibly different scenes and ingredient motion; drag/resize, play/pause, download still/GIF/video; confirm media plays independently in another application.
+- [ ] **Desktop, actual mobile Safari**, and normal touch/tablet interaction tested. Chromium desktop and simulated 390px touch have passed in GitHub Actions, but Safari is **not** covered by Chromium tests.
+- [ ] **Review/approve PR #5** and confirm production deploy SHA/visible UI before marking the project complete.
+
+## What is already automated
+
+GitHub Action `.github/workflows/artwork-redesign-tests.yml` runs Node source-binding and safety/unit tests, a desktop/mobile Chromium end-to-end flow, output-file validation of PNG, ZIP, Print/PDF, GIF, MP4 where supported, gallery filter tests and resizing. Screenshots/artifacts are uploaded. **These samples are not a substitute for real authenticated owner photographs.**
+
+## Constraints and fallbacks
+
+- Not every design in upstream all-category catalogs is a café menu. The 366 Canvix count is 122 originals + 244 variations; only its two original complete café print layouts were imported. The 24 historical Seiyun entries were 8 custom layouts × 3 colors, not 24 external originals.
+- When browser-native MP4 is unsupported, offer a supported WebM/GIF; never name an unsupported file as MP4. GIF may consume more CPU; keep output size/duration bounded.
+- Near-white background removal is best-effort and can affect white foam/cream; preserve and allow restoration of originals.
+- Ingredient particles are stylized graphics. **Physical pouring, steam simulation or true liquid mixing cannot reliably be derived from a single still photograph without real footage, 3D or optional generative media.**
+- Google Fonts may not load offline; allow fallback typefaces.
+- Multi-page output files belong to the café owner and remain usable without keeping our website open.
 
 ## Project continuity
-Read \`agent.md\` at repository root before changing the UI or backend. The older \`screen1/\` subdirectory is superseded by \`studio/\`.
 
-## Existing live Cloudflare Workers deployment — email confirmation redirect
+Read `agent.md` and source provenance in `studio/MENU_GALLERY_SOURCES.md` before editing. The older documents about mandatory TV screens, publishing and 30-second refresh describe a legacy feature and must not be used to redefine the current export-first product.
 
-The owner deployed the app at **https://cafe-menu-generator.raj-techai2026.workers.dev/**. Previous examples using a `.pages.dev` domain are outdated for this deployment.
+### Photo isolation visual check
 
-**Required Supabase Auth setting (configure manually in dashboard):**
-- Project: `tfknuqbaahesuqugfaib` → Authentication → URL Configuration.
-- **Site URL:** `https://cafe-menu-generator.raj-techai2026.workers.dev/`
-- **Redirect URLs:** add `https://cafe-menu-generator.raj-techai2026.workers.dev/` (exact URL).
-- Save. Keep **Confirm email** enabled for security. Supabase uses the Site URL as fallback when a confirmation redirect is missing or disallowed.
-
-The code in `studio/cloud.js` now passes `options.emailRedirectTo` with the hosted URL for future signups. A GitHub push doesn't guarantee the Worker has redeployed: check Cloudflare Deployments for the commit and redeploy manually if your Worker isn't linked to GitHub.
-
-**2026-11-07 Supabase check:** one Auth user existed and its `email_confirmed_at` field was populated. No unconfirmed users remained. No account required manual bypass or auto-confirmation. An email-confirmation link opening localhost **after** successful verification is a redirect configuration issue, not necessarily an account-confirmation failure. Existing user should sign in on the production URL.
-
-## TV setup, printable menus and QR codes
-See [TV_PRINT_QR.md](TV_PRINT_QR.md) for published screen links, Samsung browser steps, full-menu Print / Save as PDF, and owner-managed menu/Google-review QR codes. Google review URL is intentionally not prefilled: supply it through the owner's official Google Business Profile.
+The product preview now attempts a local, non-destructive cutout of near-white, edge-connected backgrounds (the common white rectangles around cup photographs) before showing or exporting artwork. Toggle **Automatically isolate drinks photographed on plain white backgrounds** off when a bright product or deliberate white design is mistakenly affected. The original Storage photo is not changed. A manual **Remove plain white background** action can still save a separate transparent version. CORS restrictions may prevent the local mask; the original photo then remains visible and downloads must still be checked. This is not a paid AI service or a full segmentation model for arbitrary complex scenery.

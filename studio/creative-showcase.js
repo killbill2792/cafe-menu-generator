@@ -1,70 +1,73 @@
 /* Seiyun showcase — genuine MIT Motion Lab preview; browser-local video and GIF. */
 (function(){
 'use strict';
-let scene=null,sceneToken=0,engine=null,paused=false;
-const motionModule=()=>import('./vendor/motion-lab/motion.js');
+let scene=null,sceneToken=0,paused=false;
 const gifModule=()=>import('./vendor/gifenc/index.js');
 const slug=value=>String(value||'cafe').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,45)||'cafe';
 const saveFile=(blob,name)=>{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);};
 const productFor=(state,cfg,core)=>core.chooseProduct(state,cfg.productId);
 const photosFor=(p,core)=>Array.isArray(p?.photos)?p.photos.map(u=>core.safeUrl(u)).filter(Boolean):[];
-function destroy(){sceneToken++;if(scene){scene.destroy();scene=null;}paused=false;}
+function destroy(){
+ sceneToken++;
+ if(scene?.raf)cancelAnimationFrame(scene.raf);
+ scene=null;paused=false;
+}
 async function mount(host,state,cfg,core,notify){
  destroy();if(!host)return;
- const p=productFor(state,cfg,core),photos=photosFor(p,core);
- if(!p||!photos.length){host.innerHTML='<div class="cs-no-motion">Upload a drink photo to see real motion.</div>';return;}
+ const p=productFor(state,cfg,core);
+ if(!p||!core.selectedShowcasePhoto(p)){host.innerHTML='<div class="cs-no-motion">Upload one drink photo to begin your advertisement.</div>';return;}
+ const scenes=window.SeiyunCinematicScenes;
+ if(!scenes){host.textContent='Cinematic scene engine is unavailable.';notify?.('Cinematic scene engine could not load',true);return;}
+ host.innerHTML=scenes.render(p,core.normalizeBrand(state.branding||{}),cfg);
+ const root=host.querySelector('.cs-cinematic-scene'),hero=root?.querySelector('.cs-hero-product'),beam=root?.querySelector('.cs-cinematic-beam'),ring=root?.querySelector('.cs-cinematic-ring');
+ if(!root||!hero)return;
  const token=sceneToken;
- try{
-  const mod=await motionModule();if(token!==sceneToken||!host.isConnected)return;
-  engine=mod;
-  const distinct=photos.map(src=>({src,title:p.name,category:p.category||'Drink'}));
-  const chosen=core.selectedShowcasePhoto(p);
-  distinct.sort((a,b)=>Number(b.src===chosen)-Number(a.src===chosen));
-  scene=new mod.MotionScene(host,distinct,{mode:cfg.mode,collection:'objects',format:'full',frame:'none',center:false,count:6,size:235,depth:.8,speed:cfg.speed,tilt:19,direction:1});
-  paused=false;
- }catch(e){if(token===sceneToken){host.innerHTML='<div class="cs-no-motion">Motion engine could not load: '+String(e.message||e).replace(/[<>]/g,'')+'</div>';notify?.('Motion preview failed: '+e.message,true);}}
+ scene={host,root,hero,beam,ring,raf:0,elapsed:0,last:0,cfg,product:p,token};
+ // Studio white-background photographs become a transparent preview derivative in memory.
+ // No storage mutation, no AI call, no need to upload a second photo.
+ const raw=core.selectedShowcasePhoto(p);
+ if(cfg.autoCutout!==false&&raw&&window.SeiyunPhotoCutout){
+  loadImage(raw).then(image=>window.SeiyunPhotoCutout.make(image)).then(result=>{
+   if(token!==sceneToken||!host.isConnected||!result.changed)return;
+   const clean=result.asset.toDataURL('image/png');
+   const image=hero.querySelector('img');if(image)image.src=clean;
+   document.querySelectorAll('.cs-scene-choice-img').forEach(img=>{
+    if(img.getAttribute('src')===raw)img.src=clean;
+   });
+  }).catch(()=>{/* Original stays visible when storage CORS prevents local pixel access. */});
+ }
+ function advance(now){
+  if(!scene||token!==sceneToken||!host.isConnected)return;
+  if(scene.last&&!paused)scene.elapsed+=Math.min(100,now-scene.last);
+  scene.last=now;
+  const own=scene.cfg,choice=scenes.resolve(p,core.normalizeBrand(state.branding||{}),own);
+  const percent=(scene.elapsed/((own.duration||7)*1000))%1;
+  const f=scenes.frameAt(percent,choice.id,own.speed);
+  const scale=choice.layers.hero.scale*f.heroScale;
+  hero.style.animation='none';
+  hero.style.transform='translate(-50%,-50%) translateY('+f.heroY+'%) scale('+scale+')';
+  if(beam){beam.style.animation='none';beam.style.transform='translateX('+(f.lightX-50)*1.25+'%) rotate(-12deg)';}
+  if(ring){ring.style.animation='none';ring.style.transform='translate(-50%,-50%) rotate('+f.ringRotation+'deg) scale('+(0.93+f.glow*.08)+')';}
+  scene.raf=requestAnimationFrame(advance);
+ }
+ scene.raf=requestAnimationFrame(advance);
 }
-function toggle(){if(!scene)return;paused=!paused;scene.setPlaying(!paused);}
-function update(state,cfg,core){if(scene){scene.update({...scene.config,mode:cfg.mode,speed:cfg.speed});}}
+function toggle(){if(!scene)return;paused=!paused;}
+function pauseForEdit(){if(scene)paused=true;}
+function update(state,cfg,core){if(scene){scene.cfg=cfg;}}
 function loadImage(src){return new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=()=>reject(Error('Product photograph could not load with export permission. Check Storage access/CORS or upload a PNG directly.'));img.src=src;});}
 async function assets(state,cfg,core){const p=productFor(state,cfg,core),src=core.selectedShowcasePhoto(p);if(!p||!src)throw Error('Upload or select a product photograph first.');
-const photo=await loadImage(src);return {photo,product:p};}
+const image=await loadImage(src),photo=cfg.autoCutout===false?image:(window.SeiyunPhotoCutout?.make(image).asset||image);return {photo,product:p};}
 function renderFrame(ctx,photo,p,brand,cfg,mod,progress,w,h,state){
- // This is a video composition using the vendored Motion Lab frameAt trajectory.
- ctx.clearRect(0,0,w,h);
- const bg=cfg.background||'#2e1815';
- ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
- const gl=ctx.createRadialGradient(w*.63,h*.43,10,w*.56,h*.47,h*.7);
- gl.addColorStop(0,'rgba(255,183,126,.42)');gl.addColorStop(1,'rgba(255,183,126,0)');
- ctx.fillStyle=gl;ctx.fillRect(0,0,w,h);
- const config=mod.normalize({mode:cfg.mode,collection:'objects',format:'full',size:200,depth:.6,tilt:18,count:6,speed:cfg.speed});
- const p0=(progress*cfg.speed/1.1)%1;
- const fr=mod.frameAt(p0,0,config,w*.75,h*.57);
- const floatY=fr.y*.42,moveX=fr.x*.26,depthScale=Math.max(.6,Math.min(1.14,1+fr.z/3200));
- const maxW=w*.76,maxH=h*.53,scale=Math.min(maxW/photo.width,maxH/photo.height)*depthScale;
- const iw=photo.width*scale,ih=photo.height*scale;
- ctx.save();ctx.globalAlpha=Math.max(.5,fr.opacity);
- ctx.translate(w*.5+moveX,h*.44+floatY);
- ctx.rotate(fr.rotateZ*Math.PI/180*.24);
- ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=25;ctx.shadowOffsetY=22;
- ctx.drawImage(photo,-iw/2,-ih/2,iw,ih);ctx.restore();
- ctx.fillStyle='#fff1df';ctx.textAlign='center';
- ctx.font='bold '+Math.round(w*.048)+'px Georgia,serif';ctx.fillText(brand.name||'Café',w/2,h*.085,w*.86);
- ctx.fillStyle='#e7ba8d';ctx.font='bold '+Math.round(w*.020)+'px Arial';ctx.fillText('CRAFTED TO BE SAVORED',w/2,h*.80,w*.86);
- const title=String(p.name||'Your drink');ctx.fillStyle='#fff8ec';ctx.font='bold '+Math.round(w*.06)+'px Georgia,serif';
- // Wrap long titles without allowing them to run off the output frame.
- const words=title.split(/\s+/),lines=[];let row='';
- for(const word of words){const combined=(row?row+' ':'')+word;if(ctx.measureText(combined).width>w*.8&&row){lines.push(row);row=word;}else row=combined;}if(row)lines.push(row);
- lines.slice(0,3).forEach((line,i)=>ctx.fillText(line,w/2,h*.855+i*h*.046,w*.87));
- const price=p.sizes?.[0]?.price;
- if(price!==undefined&&price!==null&&String(price)!==''){ctx.font='bold '+Math.round(w*.036)+'px Arial';ctx.fillText('$'+Number(price).toFixed(2),w/2,h*.96,w*.88);}
+ if(!window.SeiyunCinematicScenes)throw Error('Cinematic scene renderer is unavailable');
+ window.SeiyunCinematicScenes.drawFrame(ctx,photo,p,brand,cfg,progress,w,h);
 }
 async function downloadVideo(state,cfg,core){
  if(typeof MediaRecorder==='undefined'||!HTMLCanvasElement.prototype.captureStream)throw Error('Video recording is unsupported in this browser. Try Chrome desktop or download a GIF.');
  const fmt=core.recordingFormat(t=>MediaRecorder.isTypeSupported(t));
  if(!fmt)throw Error('This browser does not support native video recording. Download a GIF instead.');
  const {photo,product}=await assets(state,cfg,core);
- const mod=engine||await motionModule();const canvas=document.createElement('canvas');canvas.width=720;canvas.height=1280;
+ const mod=null;const canvas=document.createElement('canvas');canvas.width=720;canvas.height=1280;
  const ctx=canvas.getContext('2d',{alpha:false});renderFrame(ctx,photo,product,core.normalizeBrand(state.branding||{}),cfg,mod,0,720,1280,state);
  const stream=canvas.captureStream(24),chunks=[];
  let recorder;
@@ -92,7 +95,7 @@ async function downloadVideo(state,cfg,core){
 }
 async function downloadGif(state,cfg,core){
  const {photo,product}=await assets(state,cfg,core);
- const mod=engine||await motionModule();
+ const mod=null;
  const {GIFEncoder,quantize,applyPalette}=await gifModule();
  const gif=GIFEncoder(),w=360,h=640,cn=document.createElement('canvas');cn.width=w;cn.height=h;const ctx=cn.getContext('2d',{willReadFrequently:true});
  const count=36;
@@ -107,6 +110,16 @@ async function downloadGif(state,cfg,core){
  const bytes=gif.bytes();if(!bytes.length)throw Error('GIF export failed to produce frames.');
  saveFile(new Blob([bytes],{type:'image/gif'}),slug(core.normalizeBrand(state.branding||{}).name)+'-'+slug(product.name)+'.gif');
  return {message:'Animated GIF downloaded (36 frames).'};
+}
+async function downloadStill(state,cfg,core){
+ const {photo,product}=await assets(state,cfg,core);
+ const canvas=document.createElement('canvas');canvas.width=720;canvas.height=1280;
+ const ctx=canvas.getContext('2d',{alpha:false});
+ renderFrame(ctx,photo,product,core.normalizeBrand(state.branding||{}),cfg,null,.5,720,1280,state);
+ const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+ if(!blob)throw Error('Unable to generate still image');
+ saveFile(blob,slug(core.normalizeBrand(state.branding||{}).name)+'-'+slug(product.name)+'-poster.png');
+ return {message:'Downloaded a full-size promotional poster.'};
 }
 async function removeWhiteBackground(state,cfg,core){
  const p=productFor(state,cfg,core),src=core.selectedShowcasePhoto(p);
@@ -133,5 +146,5 @@ async function removeWhiteBackground(state,cfg,core){
  p.photos.push(url);p.showcasePrimary=p.photos.length-1;
  return {updated:true,message:'Saved a transparent copy. The original photograph is unchanged.'};
 }
-window.SeiyunShowcase={mount,destroy,toggle,update,downloadVideo,downloadGif,removeWhiteBackground};
+window.SeiyunShowcase={mount,destroy,toggle,pauseForEdit,update,downloadVideo,downloadGif,downloadStill,removeWhiteBackground};
 })();

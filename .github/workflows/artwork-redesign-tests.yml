@@ -1,0 +1,69 @@
+name: Real menu and cinematic scene tests
+on:
+  push:
+    branches: [feat/real-template-browser-cinematic-hero, main]
+    paths:
+      - 'studio/vendor/opentempl/**'
+      - 'studio/open-template-adapter.js'
+      - 'studio/cinematic-scenes.*'
+      - 'studio/creative-studio.*'
+      - 'studio/creative-showcase.js'
+      - 'studio/photo-cutout.js'
+      - 'tests/photo-cutout.test.js'
+      - 'studio/creative-layout-editor.js'
+      - 'studio/menu-gallery.*'
+      - 'tests/open-template-adapter.test.js'
+      - 'tests/gallery-real-preview.test.js'
+      - 'tests/creative-layout.test.js'
+      - 'tests/canvix-menu-adapter.test.js'
+      - 'tests/template-fonts.test.js'
+      - 'studio/template-fonts.js'
+      - 'studio/vendor/canvix/**'
+      - 'tests/cinematic-scenes.test.js'
+      - 'tests/creative-ui.browser.js'
+      - '.github/workflows/artwork-redesign-tests.yml'
+  pull_request:
+    branches: [main]
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/open-template-adapter.test.js tests/cinematic-scenes.test.js tests/photo-cutout.test.js tests/gallery-real-preview.test.js tests/creative-layout.test.js tests/canvix-menu-adapter.test.js tests/template-fonts.test.js
+  integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/creative-core.test.js tests/menu-gallery.test.js
+
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.1 html2canvas@1.4.1 jszip@3.10.1
+      - run: npx playwright install chromium
+      - run: node tests/creative-ui.browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-menu-and-cinematic-evidence
+          path: artifacts/*.png
+          if-no-files-found: ignore
+
+      - run: tar -czf creative-studio-source.tar.gz studio tests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: creative-studio-snapshot
+          path: creative-studio-source.tar.gz
+          if-no-files-found: ignore

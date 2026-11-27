@@ -5,7 +5,7 @@ if(typeof document==='undefined'||!window.SeiyunCreativeCore)return;
 const core=window.SeiyunCreativeCore;
 const $=q=>document.querySelector(q);
 const esc=v=>String(v??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
-let page=0,photoId='',templatesOpen=false,brandOpen=false,search='',renderToken=0;
+let page=0,photoId='',templatesOpen=false,brandOpen=false,search='',galleryFilter='all',renderToken=0;
 const isOwnerRoute=()=>!new URLSearchParams(location.search).has('screen');
 const config=()=>{if(!draft.menuArtwork)draft.menuArtwork={};return draft.menuArtwork};
 const branding=()=>core.normalizeBrand(draft.branding||{});
@@ -36,14 +36,49 @@ function photoPanel(){
  '<div class="cs-actions"><button class="cs-btn primary" data-cs-upload="'+esc(p.id)+'">Replace / add photo</button><button class="cs-btn" data-cs-action="reset-photo">Reset</button></div></div>';
 }
 function templateTiles(){
- const lib=window.SeiyunMenuGallery;
- return lib.registry.map(t=>'<button type="button" class="cs-design '+((config().templateId||lib.defaults.templateId)===t.id?'selected':'')+'" data-cs-design="'+esc(t.id)+'"><span class="cs-design-art tone-'+esc(t.tone)+' layout-'+esc(t.layout)+'"><i></i><b></b><b></b><b></b></span><span>'+esc(t.title)+'</span></button>').join('');
+ const lib=window.SeiyunMenuGallery,settings=config();
+ const designs=lib.distinctLayouts();
+ const specials=new Set(['food-menu-special-story','asia-onigiri-label','food-menu-lunch-week']);
+ const photoFirst=new Set(['photo-left','photo-right','photo-cards','gallery','editorial','split']);
+ const palettes={warm:'#dec8ad',dark:'#33221c',clean:'#eff7f4'};
+ return designs.map(t=>{
+  const active=t.looks.find(l=>l.id===(settings.templateId||lib.defaults.templateId))||t.looks[0];
+  const selected=t.looks.some(l=>l.id===settings.templateId);
+  const imported=['opentempl','canvix'].includes(t.source);
+  const group=imported?(specials.has(t.sourceId)?'special':'imported'):'classic';
+  const doc=imported?[...(window.SeiyunOpenMenuPack||[]),...(window.SeiyunCanvixMenuPack||[])].find(d=>d.id===t.sourceId):null;
+  const hasPhoto=imported?!!doc?.pages?.some(pg=>pg.elements?.some(e=>e.type==='image'&&!/texture|paper/i.test(e.kind||'')&&e.w*e.h<doc.width*doc.height*.68)):photoFirst.has(t.layout);
+  const kind=t.source==='canvix'?'CANVIX · ORIGINAL CAFÉ MENU':t.source==='opentempl'?(group==='special'?'FEATURE BOARD':'OPENTEMPL · ORIGINAL DESIGN'):'SEIYUN · EDITABLE LAYOUT';
+  const swatches=imported?'':'<div class="cs-look-options" aria-label="Choose a color treatment">'+t.looks.map(l=>
+   '<button type="button" data-cs-variant="'+esc(l.id)+'" class="cs-look-chip '+(l.id===settings.templateId?'active':'')+'" aria-pressed="'+(l.id===settings.templateId)+'" title="'+esc(l.title)+'"><i style="background:'+palettes[l.tone]+'"></i>'+esc(l.tone==='warm'?'Warm':l.tone==='dark'?'Dark':'Clean')+'</button>').join('')+'</div>';
+  return '<div class="cs-design-entry" data-cs-group="'+group+'" data-cs-photo-rich="'+(hasPhoto?'1':'0')+'" data-cs-query="'+esc((t.title+' '+t.source+' '+kind+' '+(t.vibe||'')).toLowerCase())+'">'+
+   '<button type="button" class="cs-design '+(selected?'selected':'')+'" data-cs-design="'+esc(active.id)+'" aria-pressed="'+selected+'">'+
+   lib.thumbnailHTML(draft,active)+'<span class="cs-design-title">'+esc(t.title)+'</span><span class="cs-template-category">'+esc(kind)+'</span></button>'+swatches+'</div>';
+ }).join('');
+}
+function applyGalleryFilters(){
+ const q=search.toLowerCase().trim();
+ let count=0;
+ document.querySelectorAll('.cs-design-entry').forEach(card=>{
+  const matchesName=!q||card.dataset.csQuery?.includes(q);
+  const matchesGroup=galleryFilter==='all'||galleryFilter==='photos'&&card.dataset.csPhotoRich==='1'||
+    galleryFilter==='imported'&&['imported','special'].includes(card.dataset.csGroup)||
+    galleryFilter==='specials'&&card.dataset.csGroup==='special'||
+    galleryFilter==='classic'&&card.dataset.csGroup==='classic';
+  card.hidden=!(matchesName&&matchesGroup);
+  if(!card.hidden)count++;
+ });
+ document.querySelectorAll('[data-cs-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.csFilter===galleryFilter);b.setAttribute('aria-pressed',String(b.dataset.csFilter===galleryFilter));});
+ const label=document.getElementById('csDesignCount');
+ if(label)label.textContent=count+' distinct designs shown';
+ const empty=document.getElementById('csDesignEmpty');
+ if(empty)empty.hidden=count>0;
 }
 function menuUI(){
  const lib=window.SeiyunMenuGallery,opts=lib.getSettings(draft),data=lib.renderPages(draft,opts);
  page=Math.max(0,Math.min(data.pageCount-1,page));
- return '<div class="cs-intro"><div><small>MENU GENERATOR</small><h1>Make your menu yours.</h1><p>Your café information is already here. Click text or a photo on the finished menu to edit.</p></div><div class="cs-actions"><button class="cs-btn" data-cs-action="designs">Browse '+lib.registry.length+' designs</button><button class="cs-btn" data-cs-action="brand">Customize brand</button></div></div>'+
- (templatesOpen?'<section class="cs-designs"><div class="cs-panel-head"><strong>Choose your menu design</strong><button data-cs-action="designs">×</button></div><input id="csDesignSearch" type="search" placeholder="Search designs" value="'+esc(search)+'"><div class="cs-design-grid">'+templateTiles()+'</div></section>':'')+
+ return '<div class="cs-intro"><div><small>MENU GENERATOR</small><h1>Make your menu yours.</h1><p>Your café information is already here. Tap once to select and drag. Double-tap text to change the words. Resize using the corner handles; downloads keep your edits.</p></div><div class="cs-actions"><button class="cs-btn" data-cs-action="designs">Browse '+lib.distinctLayouts().length+' layouts</button><button class="cs-btn" data-cs-action="brand">Customize brand</button></div></div>'+
+ (templatesOpen?'<section class="cs-designs"><div class="cs-panel-head"><div><strong>Choose a complete design</strong><p>'+lib.distinctLayouts().length+' different layouts: '+lib.registry.filter(t=>['opentempl','canvix'].includes(t.source)).length+' imported originals, plus '+lib.distinctLayouts().filter(t=>!t.isSourceDesign).length+' classics with optional color treatments.</p></div><button data-cs-action="designs">×</button></div><input id="csDesignSearch" type="search" placeholder="Search café, photo, vintage, special…" value="'+esc(search)+'"><div class="cs-design-filters">'+[['all','All'],['photos','With photos'],['imported','Source designs'],['specials','Special boards'],['classic','Classic layouts']].map(([id,label])=>'<button type="button" data-cs-filter="'+id+'" class="'+(galleryFilter===id?'active':'')+'" aria-pressed="'+(galleryFilter===id)+'">'+label+'</button>').join('')+'</div><p id="csDesignCount" class="cs-design-counter">'+lib.distinctLayouts().length+' distinct designs</p><p id="csDesignEmpty" hidden>No designs match this search. Try another term.</p><div class="cs-design-grid">'+templateTiles()+'</div></section>':'')+
  brandPanel()+
  '<section class="cs-workspace"><div class="cs-toolbar"><label>Format <select id="csFormat">'+Object.entries(lib.formats).map(([v,o])=>'<option value="'+v+'" '+(opts.format===v?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select></label><span id="csItems">'+data.productCount+' items · '+data.pageCount+' pages</span><div class="cs-actions"><button class="cs-btn" data-cs-action="add-drink">+ Product</button><button class="cs-btn" data-cs-action="pdf">PDF / Print</button><button class="cs-btn primary" data-cs-action="png">Download PNG</button><button class="cs-btn" data-cs-action="jpg">JPG</button></div></div>'+
  '<div class="cs-art-space"><div id="csArtHost" class="cs-art-host"><div id="csArtPage" class="cs-art-page">'+data.pages[page]+'</div></div>'+photoPanel()+'</div>'+
@@ -67,19 +102,30 @@ function refreshMenu(){
  const i=$('#csItems');if(i)i.textContent=data.productCount+' items · '+data.pageCount+' pages';
  const prev=$('[data-cs-action="prev"]'),next=$('[data-cs-action="next"]');if(prev)prev.disabled=page===0;if(next)next.disabled=page===data.pageCount-1;
  fitPage();
+ window.SeiyunLayoutEditor?.attach?.($('#csArtPage'),{state:draft,templateId:lib.getSettings(draft).templateId,mode:'menu',onCommit:save});
 }
 function showcaseUI(){
  const cfg=showcase(),p=core.chooseProduct(draft,cfg.productId),photo=core.selectedShowcasePhoto(p),b=branding();
+ const scenes=window.SeiyunCinematicScenes;
+ const chosenScene=scenes?.resolve(p,b,{...cfg,background:cfg.background==='#2e1815'?undefined:cfg.background});
+ const selected=cfg.sceneId||chosenScene?.id||'cinematic-reveal';
  const products=draft.products.filter(x=>x.enabled!==false);
- return '<div class="cs-intro"><div><small>PRODUCT SHOWCASE</small><h1>Make every drink memorable.</h1><p>Choose a product and a ready-made motion. Watch it here; download the result.</p></div></div>'+
- '<div class="cs-showcase-grid"><section class="cs-showcase-tools"><label class="cs-field">Drink<select id="csProductSelect">'+products.map(x=>'<option value="'+esc(x.id)+'" '+(p?.id===x.id?'selected':'')+'>'+esc(x.name||'New drink')+'</option>').join('')+'</select></label>'+
- '<strong>Product photos</strong><div class="cs-photo-thumbs">'+(p?.photos?.length?p.photos.map((url,i)=>'<button data-cs-ad-photo="'+i+'" class="'+(photo===url?'selected':'')+'"><img src="'+esc(url)+'" alt="Photo '+(i+1)+'"></button>').join(''):'<p>No photo uploaded yet.</p>')+'</div>'+
- '<button class="cs-btn primary" data-cs-action="ad-upload">+ Upload photo</button><strong>Animation style</strong><div class="cs-motion-grid">'+core.motionModes().map(m=>'<button data-cs-motion="'+m+'" class="'+(cfg.mode===m?'selected':'')+'">'+m[0].toUpperCase()+m.slice(1)+'</button>').join('')+'</div>'+
- '<label class="cs-field">Background<input id="csAdColor" type="color" value="'+cfg.background+'"></label><label class="cs-field">Speed <input id="csAdSpeed" type="range" min="0.25" max="2.5" step="0.25" value="'+cfg.speed+'"></label>'+
- '<label class="cs-field">Video duration<select id="csAdDuration">'+[5,7,10,15].map(n=>'<option value="'+n+'" '+(Number(cfg.duration)===n?'selected':'')+'>'+n+' seconds</option>').join('')+'</select></label></section>'+
- '<section class="cs-showcase-preview"><div id="csAdStage" class="cs-ad-stage" style="--cs-ad-bg:'+cfg.background+'"><div id="csMotion" class="cs-motion"></div><div class="cs-ad-brand">'+esc(b.name)+'</div><div class="cs-ad-caption"><span>CRAFTED TO BE SAVORED</span><h2 data-cs-edit="showcase.title">'+esc(p?.name||'Your drink')+'</h2><p>'+esc(p?.description||p?.ingredients||'')+'</p><strong>'+esc(p?.sizes?.[0]?money(p.sizes[0].price):'')+'</strong></div></div>'+
- '<div class="cs-actions cs-export"><button class="cs-btn" data-cs-action="play">Pause / Play</button><button class="cs-btn primary" data-cs-action="video">Download video</button><button class="cs-btn" data-cs-action="gif">Download GIF</button></div>'+
- '<div class="cs-actions"><button class="cs-btn" data-cs-action="cutout">Remove plain white background</button></div><p id="csMessage" class="cs-footnote">'+(photo?'Motion preview uses the selected drink photograph.':'Upload a photo to activate your animation.')+'</p></section></div>';
+ return '<div class="cs-intro"><div><small>PRODUCT SHOWCASE</small><h1>One drink. A complete advertisement.</h1><p>Your photograph and brand are ready. Select a cinematic scene, adjust directly, and download.</p></div></div>'+
+ '<div class="cs-showcase-grid"><section class="cs-showcase-tools"><label class="cs-field">Featured drink<select id="csProductSelect">'+products.map(x=>'<option value="'+esc(x.id)+'" '+(p?.id===x.id?'selected':'')+'>'+esc(x.name||'New drink')+'</option>').join('')+'</select></label>'+
+ '<strong>Choose the hero photo</strong><div class="cs-photo-thumbs">'+(p?.photos?.length?p.photos.map((url,i)=>'<button data-cs-ad-photo="'+i+'" class="'+(photo===url?'selected':'')+'"><img src="'+esc(url)+'" alt="Photo '+(i+1)+'"></button>').join(''):'<p>No photo uploaded yet.</p>')+'</div>'+
+ '<button class="cs-btn primary" data-cs-action="ad-upload">+ Add or replace photograph</button>'+
+ '<label class="cs-check cs-cutout-option"><input type="checkbox" id="csAutoCutout" '+(cfg.autoCutout?'checked':'')+'> Automatically isolate drinks photographed on plain white backgrounds</label>'+
+ '<strong>Cinematic scene styles</strong><div class="cs-cinematic-options">'+(scenes?.registry||[]).map(scene=>
+ '<button type="button" data-cs-motion="'+esc(scene.id)+'" class="cs-scene-choice '+(selected===scene.id?'selected':'')+'" aria-pressed="'+(selected===scene.id)+'">'+
+ '<span class="cs-scene-choice-preview choice-'+esc(scene.id)+'"><span class="cs-scene-choice-glow"></span>'+(photo?'<img class="cs-scene-choice-img" src="'+esc(photo)+'" alt="">':'')+'</span><b>'+esc(scene.name)+'</b><small>'+esc(scene.description)+'</small></button>').join('')+'</div>'+
+ '<label class="cs-field">Background <input id="csAdColor" type="color" value="'+esc(chosenScene?.palette.background||cfg.background)+'"></label>'+
+ '<label class="cs-field">Motion speed <input id="csAdSpeed" type="range" min="0.25" max="2.5" step="0.25" value="'+cfg.speed+'"></label>'+
+ '<label class="cs-field">Duration <select id="csAdDuration">'+[5,7,10,15].map(n=>'<option value="'+n+'" '+(Number(cfg.duration)===n?'selected':'')+'>'+n+' seconds</option>').join('')+'</select></label>'+
+ '<p class="cs-footnote">Tap the drink or headline inside the ad to move or resize it. You own every exported file.</p></section>'+
+ '<section class="cs-showcase-preview"><div id="csAdStage" class="cs-ad-stage" style="--cs-ad-bg:'+esc(chosenScene?.palette.background||cfg.background)+'"><div id="csMotion" class="cs-motion"></div></div>'+
+ '<div class="cs-actions cs-export"><button class="cs-btn" data-cs-action="play">Pause / Play</button><button class="cs-btn primary" data-cs-action="video">Download video</button><button class="cs-btn" data-cs-action="gif">GIF</button><button class="cs-btn" data-cs-action="still">PNG still</button></div>'+
+ '<div class="cs-actions"><button class="cs-btn" data-cs-action="cutout">Remove plain white background</button></div>'+
+ '<p id="csMessage" class="cs-footnote">'+(photo?'One featured product, with animated environment and real preview.':'Upload a photo to activate the cinematic scene.')+'</p></section></div>';
 }
 function money(value){try{return new Intl.NumberFormat('en-US',{style:'currency',currency:draft.currency||'USD'}).format(value);}catch{return '$'+Number(value).toFixed(2);}}
 function renderCreative(){
@@ -87,16 +133,35 @@ function renderCreative(){
  if(!draft||!Array.isArray(draft.products))return;
  if(!['menu','showcase'].includes(tab))tab='menu';
  window.SeiyunShowcase?.destroy?.();
+ if(tab==='menu'&&window.SeiyunTemplateFonts){
+  const sources=[...(window.SeiyunOpenMenuPack||[]),...(window.SeiyunCanvixMenuPack||[])];
+  const selectedDesign=config().templateId||'';
+  const selected=sources.filter(x=>selectedDesign.endsWith(':'+x.id));
+  window.SeiyunTemplateFonts.loadFonts(document,templatesOpen?sources:selected);
+ }
  const root=$('#app');root.innerHTML=shell(tab==='menu'?menuUI():showcaseUI());
+ if(templatesOpen)applyGalleryFilters();
  const n=++renderToken;
- if(tab==='menu')requestAnimationFrame(()=>{if(n===renderToken)fitPage();});
- else window.SeiyunShowcase?.mount?.($('#csMotion'),draft,showcase(),core,notify);
+ if(tab==='menu')requestAnimationFrame(()=>{
+  if(n!==renderToken)return;
+  fitPage();
+  window.SeiyunLayoutEditor?.attach?.($('#csArtPage'),{state:draft,templateId:window.SeiyunMenuGallery.getSettings(draft).templateId,mode:'menu',onCommit:save});
+ });
+ else {
+  window.SeiyunShowcase?.mount?.($('#csMotion'),draft,showcase(),core,notify);
+  requestAnimationFrame(()=>{
+   if(n!==renderToken)return;
+   window.SeiyunLayoutEditor?.attach?.($('#csAdStage'),{state:draft,mode:'showcase',onCommit:save});
+  });
+ }
 }
 render=renderCreative;
 function dataClick(ev){
  const route=ev.target.closest('[data-cs-tab]');if(route){ev.preventDefault();ev.stopImmediatePropagation();tab=route.dataset.csTab;page=0;photoId='';render();return;}
- const tpl=ev.target.closest('[data-cs-design]');if(tpl){ev.preventDefault();ev.stopImmediatePropagation();config().templateId=tpl.dataset.csDesign;page=0;save();render();return;}
- const motion=ev.target.closest('[data-cs-motion]');if(motion){ev.preventDefault();ev.stopImmediatePropagation();draft.showcaseArtwork={...showcase(),mode:motion.dataset.csMotion};save();render();return;}
+ const chosenLook=ev.target.closest('[data-cs-variant]');if(chosenLook){ev.preventDefault();ev.stopImmediatePropagation();config().templateId=chosenLook.dataset.csVariant;page=0;photoId='';templatesOpen=false;save();render();return;}
+ const filterBtn=ev.target.closest('[data-cs-filter]');if(filterBtn){ev.preventDefault();ev.stopImmediatePropagation();galleryFilter=filterBtn.dataset.csFilter;applyGalleryFilters();return;}
+ const tpl=ev.target.closest('[data-cs-design]');if(tpl){ev.preventDefault();ev.stopImmediatePropagation();const t=window.SeiyunMenuGallery.registry.find(x=>x.id===tpl.dataset.csDesign);if(!t)return;config().templateId=t.id;if(t.recommendedFormat)config().format=t.recommendedFormat;page=0;photoId='';templatesOpen=false;save();render();return;}
+ const motion=ev.target.closest('[data-cs-motion]');if(motion){ev.preventDefault();ev.stopImmediatePropagation();draft.showcaseArtwork={...showcase(),sceneId:motion.dataset.csMotion};save();render();return;}
  const ph=ev.target.closest('[data-cs-photo]');if(ph&&tab==='menu'){ev.preventDefault();ev.stopImmediatePropagation();photoId=ph.dataset.csPhoto;render();return;}
  const photo=ev.target.closest('[data-cs-ad-photo]');if(photo){ev.preventDefault();ev.stopImmediatePropagation();const p=core.chooseProduct(draft,showcase().productId);if(p){p.showcasePrimary=Number(photo.dataset.csAdPhoto);save();render();}return;}
  const upload=ev.target.closest('[data-cs-upload]');if(upload){ev.preventDefault();ev.stopImmediatePropagation();selected=upload.dataset.csUpload;window.seiyunUploadDestination='menu';$('#productImage')?.click();return;}
@@ -112,17 +177,34 @@ function dataClick(ev){
  if(cmd==='upload-logo'){$('#csLogoFile')?.click();return;}
  if(cmd==='ad-upload'){const p=core.chooseProduct(draft,showcase().productId);if(p){selected=p.id;window.seiyunUploadDestination='showcase';$('#productImage')?.click();}else notify('Add a product before uploading.',true);return;}
  if(cmd==='add-drink'){draft.products.push({id:uid(),name:'New drink',category:'Other',description:'',ingredients:'',photos:[],primary:0,enabled:true,sizes:[{id:uid(),name:'Regular',price:0}]});page=999;save();render();return;}
- if(['pdf','png','jpg'].includes(cmd)){b.disabled=true;Promise.resolve().then(()=>cmd==='pdf'?window.SeiyunMenuGallery.printMenu():window.SeiyunMenuGallery.exportImages(cmd)).then(()=>notify(cmd==='pdf'?'Use Save as PDF in the print window.':'Artwork download started.')).catch(e=>notify('Export failed: '+e.message,true)).finally(()=>b.disabled=false);return;}
+ if(['pdf','png','jpg'].includes(cmd)){
+  b.disabled=true;
+  if(cmd==='pdf'){
+   try{window.SeiyunMenuGallery.printMenu();notify('Use Save as PDF in the print window.');}
+   catch(e){notify('Print failed: '+e.message,true);}
+   finally{b.disabled=false;}
+   return;
+  }
+  Promise.resolve(window.SeiyunMenuGallery.exportImages(cmd))
+   .then(()=>notify('Artwork download started.'))
+   .catch(e=>notify('Export failed: '+e.message,true))
+   .finally(()=>b.disabled=false);
+  return;
+ }
  if(cmd==='play'){window.SeiyunShowcase?.toggle?.();return;}
- if(['video','gif','cutout'].includes(cmd)){b.disabled=true;const fn=cmd==='video'?'downloadVideo':cmd==='gif'?'downloadGif':'removeWhiteBackground';Promise.resolve(window.SeiyunShowcase?.[fn]?.(draft,showcase(),core)).then(result=>{if(result?.message)notify(result.message);if(result?.updated){save();render();}}).catch(e=>notify(e.message||String(e),true)).finally(()=>b.disabled=false);}
+ if(['video','gif','cutout','still'].includes(cmd)){b.disabled=true;const fn=cmd==='video'?'downloadVideo':cmd==='gif'?'downloadGif':cmd==='still'?'downloadStill':'removeWhiteBackground';Promise.resolve(window.SeiyunShowcase?.[fn]?.(draft,showcase(),core)).then(result=>{if(result?.message)notify(result.message);if(result?.updated){save();render();}}).catch(e=>notify(e.message||String(e),true)).finally(()=>b.disabled=false);}
 }
 document.addEventListener('click',dataClick,true);
+let csLastEditTarget=null,csLastEditTap=0;
 document.addEventListener('click',ev=>{
  const el=ev.target.closest('[data-cs-edit]');if(!el||el.isContentEditable||!isOwnerRoute())return;
  ev.preventDefault();ev.stopImmediatePropagation();
+ const now=Date.now();
+ if(el!==csLastEditTarget||now-csLastEditTap>650){csLastEditTarget=el;csLastEditTap=now;return;}
+ csLastEditTarget=null;csLastEditTap=0;
  const original=el.textContent;el.contentEditable='true';el.setAttribute('role','textbox');el.focus();
  el.addEventListener('blur',()=>{
-  const field=el.dataset.csEdit,id=el.closest('[data-menu-product]')?.dataset.menuProduct||showcase().productId;
+  const field=el.dataset.csEdit,id=el.dataset.csProductId||el.closest('[data-menu-product]')?.dataset.menuProduct||showcase().productId;
   const ok=core.applyInlineEdit(draft,{field:field==='showcase.title'?'name':field,productId:id,value:el.textContent,sizeIndex:Number(el.dataset.csPriceIndex)||0});
   el.removeAttribute('contenteditable');if(ok&&el.textContent!==original)save();if(tab==='menu')refreshMenu();else render();
  },{once:true});
@@ -130,7 +212,7 @@ document.addEventListener('click',ev=>{
 document.addEventListener('keydown',ev=>{if(ev.target.isContentEditable&&(ev.key==='Enter'||ev.key==='Escape')){ev.preventDefault();ev.target.blur();}});
 document.addEventListener('input',ev=>{
  const v=ev.target.dataset?.csZoom;if(v&&photoId){core.updatePhotoTransform(draft,photoId,{[v]:Number(ev.target.value)});if(v==='zoom')$('#csZoomNumber').textContent=ev.target.value+'%';save();refreshMenu();}
- if(ev.target.id==='csDesignSearch'){search=ev.target.value;document.querySelectorAll('[data-cs-design]').forEach(x=>x.hidden=!x.textContent.toLowerCase().includes(search.toLowerCase()));}
+ if(ev.target.id==='csDesignSearch'){search=ev.target.value;applyGalleryFilters();}
 });
 document.addEventListener('change',async ev=>{
  const el=ev.target;
@@ -139,6 +221,7 @@ document.addEventListener('change',async ev=>{
  if(el.id==='csShowLogo'){draft.branding={...branding(),showLogo:el.checked};save();render();}
  if(el.id==='csLogoFile'){const file=el.files?.[0];el.value='';if(!file)return;try{if(!window.seiyunCloud?.upload)throw Error('Online login required for logo upload');const url=await window.seiyunCloud.upload(file);draft.branding={...branding(),logoUrl:url,showLogo:true};save();render();}catch(e){notify('Logo upload failed: '+e.message,true);}}
  if(el.id==='csProductSelect'){draft.showcaseArtwork={...showcase(),productId:el.value};save();render();}
+ if(el.id==='csAutoCutout'){draft.showcaseArtwork={...showcase(),autoCutout:el.checked};save();render();}
  if(el.id==='csAdColor'){draft.showcaseArtwork={...showcase(),background:el.value};save();render();}
  if(el.id==='csAdSpeed'){draft.showcaseArtwork={...showcase(),speed:Number(el.value)};save();window.SeiyunShowcase?.update?.(draft,showcase(),core);}
  if(el.id==='csAdDuration'){draft.showcaseArtwork={...showcase(),duration:Number(el.value)};save();}
