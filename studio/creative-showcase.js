@@ -4,6 +4,7 @@
 let scene=null,sceneToken=0,engine=null,paused=false;
 const motionModule=()=>import('./vendor/motion-lab/motion.js');
 const gifModule=()=>import('./vendor/gifenc/index.js');
+const slug=value=>String(value||'cafe').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,45)||'cafe';
 const saveFile=(blob,name)=>{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);};
 const productFor=(state,cfg,core)=>core.chooseProduct(state,cfg.productId);
 const photosFor=(p,core)=>Array.isArray(p?.photos)?p.photos.map(u=>core.safeUrl(u)).filter(Boolean):[];
@@ -86,7 +87,7 @@ async function downloadVideo(state,cfg,core){
  });
  stream.getTracks().forEach(t=>t.stop());
  const blob=new Blob(chunks,{type:fmt.mime});if(blob.size<1000)throw Error('Encoder returned an empty video. Please retry or use GIF.');
- saveFile(blob,'seiyun-'+String(product.name||'product').toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)+'.'+fmt.ext);
+ saveFile(blob,slug(core.normalizeBrand(state.branding||{}).name)+'-'+slug(product.name)+'.'+fmt.ext);
  return {message:'Downloaded '+fmt.ext.toUpperCase()+' video. The file is yours to use anywhere.'};
 }
 async function downloadGif(state,cfg,core){
@@ -104,7 +105,7 @@ async function downloadGif(state,cfg,core){
  }
  gif.finish();
  const bytes=gif.bytes();if(!bytes.length)throw Error('GIF export failed to produce frames.');
- saveFile(new Blob([bytes],{type:'image/gif'}),'seiyun-'+String(product.name||'product').toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)+'.gif');
+ saveFile(new Blob([bytes],{type:'image/gif'}),slug(core.normalizeBrand(state.branding||{}).name)+'-'+slug(product.name)+'.gif');
  return {message:'Animated GIF downloaded (36 frames).'};
 }
 async function removeWhiteBackground(state,cfg,core){
@@ -127,7 +128,7 @@ async function removeWhiteBackground(state,cfg,core){
  ctx.putImageData(frame,0,0);
  const blob=await new Promise(resolve=>cn.toBlob(resolve,'image/png'));
  if(!blob||blob.size>6291456)throw Error('Processed cutout is too large to upload.');
- const file=new File([blob],'seiyun-transparent.png',{type:'image/png'});
+ const file=new File([blob],'product-transparent.png',{type:'image/png'});
  const url=await window.seiyunCloud.upload(file);
  p.photos.push(url);p.showcasePrimary=p.photos.length-1;
  return {updated:true,message:'Saved a transparent copy. The original photograph is unchanged.'};
