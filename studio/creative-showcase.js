@@ -32,7 +32,7 @@ async function mount(host,state,cfg,core,notify){
   const f=scenes.frameAt(percent,choice.id,own.speed);
   const scale=choice.layers.hero.scale*f.heroScale;
   hero.style.animation='none';
-  hero.style.transform='translate(-50%,calc(-50% + '+f.heroY+'%)) scale('+scale+')';
+  hero.style.transform='translate(-50%,-50%) scale('+choice.layers.hero.scale+')';
   if(beam){beam.style.animation='none';beam.style.transform='translateX('+(f.lightX-50)*1.25+'%) rotate(-12deg)';}
   if(ring){ring.style.animation='none';ring.style.transform='translate(-50%,-50%) rotate('+f.ringRotation+'deg) scale('+(0.93+f.glow*.08)+')';}
   scene.raf=requestAnimationFrame(advance);
