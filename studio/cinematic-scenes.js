@@ -58,12 +58,13 @@ function frameAt(progress,id,speed=1){
  return base;
 }
 function render(p,brand={},opts={}){
- const c=resolve(p,brand,opts),image=photoUrl(p),h=c.layers.hero,t=c.layers.title;
+ const c=resolve(p,brand,opts),image=photoUrl(p),h=c.layers.hero,t=c.layers.title,flavor=c.ingredients[0]?.label||'coffee';
  return '<div class="cs-cinematic-scene" data-scene="'+c.id+'" style="--cs-scene-bg:'+c.palette.background+';--cs-scene-accent:'+c.palette.accent+'">'+
   '<div class="cs-cinematic-background" data-environment-layer="gradient"></div>'+
   '<div class="cs-cinematic-beam" data-environment-layer="spotlight"></div>'+
   '<div class="cs-cinematic-ring" data-environment-layer="halo"></div>'+
   '<div class="cs-cinematic-particles" data-environment-layer="particles">'+Array.from({length:16},(_,i)=>'<i style="--j:'+i+'"></i>').join("")+'</div>'+
+  '<div class="cs-cinematic-flavor cs-flavor-'+safe(flavor)+'" data-environment-layer="flavor-particles">'+Array.from({length:16},(_,i)=>'<i class="cs-flavor-particle" style="--j:'+i+'"></i>').join("")+'</div>'+
   '<div class="cs-scene-ingredients" data-environment-layer="ingredients">'+c.ingredients.map((x,i)=>'<span class="cs-scene-ingredient cs-ing-'+i+'">'+safe(x.label)+'</span>').join("")+'</div>'+
   '<div class="cs-hero-product" data-scene-layer="hero" style="--cs-layer-x:'+h.x+'%;--cs-layer-y:'+h.y+'%;--cs-layer-scale:'+h.scale+'">'+
   (image?'<img class="cs-hero-img" src="'+safe(image)+'" alt="'+safe(p?.name||'Drink')+'" crossorigin="anonymous" loading="eager">':'<div class="cs-no-hero">Upload a drink photo</div>')+'</div>'+
@@ -88,6 +89,24 @@ function drawFrame(ctx,img,p,brand,opts,progress,w,h){
   px=w*(.12+.76*((i*37%97)/97)),py=h*(.18+.56*((i*53%89)/89))+Math.sin(ph)*h*.013;
   ctx.fillStyle=acc+Math.round(65+100*Math.abs(Math.sin(ph))).toString(16).padStart(2,"0");
   ctx.beginPath();ctx.arc(px,py,w*(.002+(i%4)*.0012),0,2*Math.PI);ctx.fill();}
+ const flavor=c.ingredients[0]?.label||'coffee';
+ ctx.save();
+ for(let i=0;i<16;i++){
+  const ang=(i*2.399)+progress*Math.PI*2,px=w*(.15+.7*((i*29%89)/89)),
+   py=h*(.19+.55*((i*43%97)/97))+Math.sin(ang)*h*.014;
+  if(flavor==='saffron'){
+   ctx.save();ctx.translate(px,py);ctx.rotate(Math.cos(ang)*.8);
+   ctx.strokeStyle=i%2?'#e59c44a0':'#b6482399';ctx.lineWidth=Math.max(1,w*.004);
+   ctx.beginPath();ctx.moveTo(-w*.006,-h*.013);ctx.quadraticCurveTo(w*.007,0,0,h*.017);ctx.stroke();ctx.restore();
+  }else if(flavor==='matcha'||flavor==='pistachio'){
+   ctx.fillStyle=i%2?'#c7ee88a9':'#89bd6099';ctx.beginPath();
+   ctx.arc(px,py,w*(.003+(i%3)*.0018),0,2*Math.PI);ctx.fill();
+  }else{
+   ctx.save();ctx.translate(px,py);ctx.rotate(ang);
+   ctx.fillStyle=acc+'66';ctx.beginPath();ctx.ellipse(0,0,w*.006,h*.003,0,0,2*Math.PI);ctx.fill();ctx.restore();
+  }
+ }
+ ctx.restore();
  ctx.textAlign="center";ctx.fillStyle=c.id==='product-spotlight'?'#35271f':'#fff8ec';ctx.font="bold "+Math.round(w*.077)+"px Georgia,serif";
  ctx.fillText(String(brand.name||"Your Café"),w/2,h*.085,w*.86);
  if(c.ingredients?.length){
