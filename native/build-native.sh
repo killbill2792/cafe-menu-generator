@@ -66,6 +66,42 @@ a="                  const tpl = await loadPackTemplate(t.id, t.vibe);";assert a
 s=s.replace(a,"                  if (new URL(location.href).searchParams.has('seiyun_nonce')) { location.hash = '/new?template=' + encodeURIComponent(t.id); return; }\n"+a)
 a="onClick={() => applyTemplate(editor, t)}";assert a in s
 s=s.replace(a,"onClick={() => { if (new URL(location.href).searchParams.has('seiyun_nonce')) location.hash='/new?template='+encodeURIComponent(t.id); else applyTemplate(editor,t); }}")
+# In the owner shell, keep the native template browser but render its actual
+# populated artwork through OpenTempl's native export renderer, lazily.
+s=s.replace("import { useEffect, useState } from 'react';","import { useEffect, useState, useRef } from 'react';\nimport { renderSeiyunTemplateThumb } from '../integrations/seiyunNative';")
+component="""function OwnerTemplatePreview({id,name}:{id:string;name:string}) {
+  const host=useRef<HTMLDivElement>(null);
+  const [result,setResult]=useState<{url:string;adapted:boolean}|null>(null);
+  const [failed,setFailed]=useState(false);
+  useEffect(()=>{
+    let alive=true,objectUrl='';
+    const observer=new IntersectionObserver(entries=>{
+      if(!entries.some(e=>e.isIntersecting))return;
+      observer.disconnect();
+      renderSeiyunTemplateThumb(id).then(data=>{
+        if(!alive)return;
+        if(!data){setFailed(true);return;}
+        objectUrl=URL.createObjectURL(data.blob);
+        setResult({url:objectUrl,adapted:data.adapted});
+      }).catch(()=>{if(alive)setFailed(true)});
+    },{rootMargin:'100px'});
+    if(host.current)observer.observe(host.current);
+    return()=>{alive=false;observer.disconnect();if(objectUrl)URL.revokeObjectURL(objectUrl)};
+  },[id]);
+  return <div ref={host} style={{width:'100%',height:'100%',minHeight:105,display:'grid',placeItems:'center',gap:4}}>
+    {result?<><img data-owner-preview={id} src={result.url} alt={name+' with your café products'} style={{maxWidth:'100%',maxHeight:145,objectFit:'contain'}}/><span style={{fontSize:10}}>{result.adapted?'Catalog-fit adaptation':'Your menu'}</span></>:<span className="hint">{failed?'Preview unavailable — open design':'Preparing your menu…'}</span>}
+  </div>;
+}
+
+"""
+s=s.replace("export default function TemplatesPanel() {",component+"export default function TemplatesPanel() {")
+a='<img src={thumbUrl(t.id)} alt={t.name} loading="lazy" style={{ maxWidth: \'100%\', maxHeight: \'100%\', boxShadow: \'var(--shadow-1)\' }} />'
+assert a in s
+s=s.replace(a,"{new URL(location.href).searchParams.has('seiyun_nonce') ? <OwnerTemplatePreview id={t.id} name={t.name} /> : "+a+"}")
+a='<TemplatePreview template={t} height={130} />'
+assert a in s
+s=s.replace(a,"{new URL(location.href).searchParams.has('seiyun_nonce') ? <OwnerTemplatePreview id={t.id} name={t.name} /> : "+a+"}")
+s=s.replace("Any template adapts to your page size. Click to add it.","{new URL(location.href).searchParams.has('seiyun_nonce') ? 'Previews contain your café products. Click to open a native editable design.' : 'Any template adapts to your page size. Click to add it.'}")
 panel.write_text(s)
 
 editor=Path('apps/editor/src/editor/EditorScreen.tsx')
