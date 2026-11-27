@@ -1,6 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 require('../studio/vendor/opentempl/curated-menu.js');
+require('../studio/vendor/canvix/curated-menu.js');
 require('../studio/open-template-adapter.js');
 require('../studio/menu-gallery.js');
 const lib=globalThis.SeiyunMenuGallery;
