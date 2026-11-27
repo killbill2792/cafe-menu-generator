@@ -137,7 +137,20 @@ function dataClick(ev){
  if(cmd==='upload-logo'){$('#csLogoFile')?.click();return;}
  if(cmd==='ad-upload'){const p=core.chooseProduct(draft,showcase().productId);if(p){selected=p.id;window.seiyunUploadDestination='showcase';$('#productImage')?.click();}else notify('Add a product before uploading.',true);return;}
  if(cmd==='add-drink'){draft.products.push({id:uid(),name:'New drink',category:'Other',description:'',ingredients:'',photos:[],primary:0,enabled:true,sizes:[{id:uid(),name:'Regular',price:0}]});page=999;save();render();return;}
- if(['pdf','png','jpg'].includes(cmd)){b.disabled=true;Promise.resolve().then(()=>cmd==='pdf'?window.SeiyunMenuGallery.printMenu():window.SeiyunMenuGallery.exportImages(cmd)).then(()=>notify(cmd==='pdf'?'Use Save as PDF in the print window.':'Artwork download started.')).catch(e=>notify('Export failed: '+e.message,true)).finally(()=>b.disabled=false);return;}
+ if(['pdf','png','jpg'].includes(cmd)){
+  b.disabled=true;
+  if(cmd==='pdf'){
+   try{window.SeiyunMenuGallery.printMenu();notify('Use Save as PDF in the print window.');}
+   catch(e){notify('Print failed: '+e.message,true);}
+   finally{b.disabled=false;}
+   return;
+  }
+  Promise.resolve(window.SeiyunMenuGallery.exportImages(cmd))
+   .then(()=>notify('Artwork download started.'))
+   .catch(e=>notify('Export failed: '+e.message,true))
+   .finally(()=>b.disabled=false);
+  return;
+ }
  if(cmd==='play'){window.SeiyunShowcase?.toggle?.();return;}
  if(['video','gif','cutout','still'].includes(cmd)){b.disabled=true;const fn=cmd==='video'?'downloadVideo':cmd==='gif'?'downloadGif':cmd==='still'?'downloadStill':'removeWhiteBackground';Promise.resolve(window.SeiyunShowcase?.[fn]?.(draft,showcase(),core)).then(result=>{if(result?.message)notify(result.message);if(result?.updated){save();render();}}).catch(e=>notify(e.message||String(e),true)).finally(()=>b.disabled=false);}
 }
