@@ -42,7 +42,10 @@ jobs:
         if: always()
         with:
           name: native-editor-browser-previews
-          path: artifacts/native-*.png
+          path: |
+            artifacts/native-*.png
+            artifacts/native-*.pdf
+            artifacts/native-*.gif
           if-no-files-found: ignore
       - name: Upload complete built editors and manifest
         uses: actions/upload-artifact@v4
@@ -57,7 +60,11 @@ jobs:
           tempdir=$(mktemp -d)
           cp -a studio/native "$tempdir/native"
           git fetch origin feat/native-opentempl-motion-studio
-          git reset --hard origin/feat/native-opentempl-motion-studio
+          if [ "$(git rev-parse origin/feat/native-opentempl-motion-studio)" != "$GITHUB_SHA" ]; then
+            echo "Ref changed during validation; refusing to publish stale native bundles."
+            exit 1
+          fi
+          git reset --hard "$GITHUB_SHA"
           rm -rf studio/native
           cp -a "$tempdir/native" studio/native
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
