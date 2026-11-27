@@ -73,6 +73,7 @@ editor.write_text(s)
 PY
   npm ci --no-audit --no-fund
   npm --workspace @opentempl/editor run build
+  rm -rf "$ROOT/studio/native/menu"
   mkdir -p "$ROOT/studio/native/menu"
   cp -a dist/app/. "$ROOT/studio/native/menu/"
   # Cloudflare Workers static assets forbid any single file above 25 MiB.
@@ -141,6 +142,7 @@ PY
   rm -rf app/api
   npm ci --no-audit --no-fund
   STATIC_EXPORT=1 PAGES_BASE_PATH=/native/motion NEXT_PUBLIC_EXPERIMENTS=0 MOTION_STUDIO_DEPLOYMENT_MODE=hosted npm run build
+  rm -rf "$ROOT/studio/native/motion"
   mkdir -p "$ROOT/studio/native/motion"
   cp -a out/. "$ROOT/studio/native/motion/"
   cp LICENSE "$ROOT/studio/native/motion/UPSTREAM-LICENSE.txt"
