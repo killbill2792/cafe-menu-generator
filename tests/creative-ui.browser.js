@@ -45,9 +45,9 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  assert.match(await page.locator('[data-menu-product="ref-01"] img').first().getAttribute('style'),/scale\(1\.65\)/,'real photo is zoomed without changing its box');
  await page.locator('[data-cs-action="designs"]').click();
  assert((await page.locator('.cs-design').count())>=45,'real template packs added to 24 legacy menu designs');
- assert((await page.locator('[data-cs-design="opentempl:food-menu-cafe-nord"] .mg-export-page').count())===1,'imported template thumbnail is real rendered art');
- await page.locator('[data-cs-design="opentempl:food-menu-cafe-nord"]').click();
- assert((await page.locator('#csArtPage [data-opentempl-source="food-menu-cafe-nord"]').count())===1,'real imported design chosen');
+ assert((await page.locator('[data-cs-design="opentempl:food-menu-checker-diner"] .mg-export-page').count())===1,'imported template thumbnail is real rendered art');
+ await page.locator('[data-cs-design="opentempl:food-menu-checker-diner"]').click();
+ assert((await page.locator('#csArtPage [data-opentempl-source="food-menu-checker-diner"]').count())===1,'real imported design chosen');
  await page.locator('#csArtPage [data-layout-key="brand"]').first().click();
  await page.locator('.moveable-control-box').first().waitFor({timeout:6000});
  assert.equal(await page.evaluate(()=>typeof Moveable),'function','locally vendored MIT drag engine is available');
@@ -58,11 +58,11 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.mouse.down();
  await page.mouse.move(brandBox.x+brandBox.width/2+32,brandBox.y+brandBox.height/2+24,{steps:5});
  await page.mouse.up();
- const savedBrand=await page.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-cafe-nord']?.brand);
+ const savedBrand=await page.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-checker-diner']?.brand);
  if(!savedBrand)console.log('moveable brand diagnostics',await page.evaluate(()=>({drag:SeiyunLayoutEditor.diagnostics,editable:document.querySelector('#csArtPage [data-layout-key="brand"]')?.isContentEditable,scale:document.querySelector('#csArtPage')?.style.transform})));
  assert(savedBrand&&Number.isFinite(savedBrand.x),'dragging title persists actual source layout coordinates');
  await page.locator('#csArtPage [data-layout-key="brand"]').first().click();
- const beforeSize=await page.evaluate(()=>draft.menuArtwork.layoutOverrides['opentempl:food-menu-cafe-nord'].brand.w);
+ const beforeSize=await page.evaluate(()=>draft.menuArtwork.layoutOverrides['opentempl:food-menu-checker-diner'].brand.w);
  const resizeHandle=page.locator('.moveable-control-box .moveable-se').first();
  const resizeBox=await resizeHandle.boundingBox();
  assert(resizeBox,'selection exposes a south-east resize corner');
@@ -74,8 +74,8 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.mouse.down();
  await page.mouse.move(resizeBox.x+resizeBox.width/2+24,resizeBox.y+resizeBox.height/2+12,{steps:6});
  await page.mouse.up();
- const afterSize=await page.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-cafe-nord']?.brand?.w);
- if(!(afterSize>beforeSize))console.log('resize diagnostics',await page.evaluate(()=>({d:SeiyunLayoutEditor.diagnostics,size:draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-cafe-nord']?.brand,markup:document.querySelector('#csArtPage [data-layout-key="brand"]')?.outerHTML?.slice(0,500)})));
+ const afterSize=await page.evaluate(()=>draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-checker-diner']?.brand?.w);
+ if(!(afterSize>beforeSize))console.log('resize diagnostics',await page.evaluate(()=>({d:SeiyunLayoutEditor.diagnostics,size:draft.menuArtwork.layoutOverrides?.['opentempl:food-menu-checker-diner']?.brand,markup:document.querySelector('#csArtPage [data-layout-key="brand"]')?.outerHTML?.slice(0,500)})));
  assert(afterSize>beforeSize,'pulling the corner enlarges the actual saved brand title');
  await page.locator('[data-cs-action="designs"]').click();
  await page.locator('[data-cs-design="photo-cards-dark"]').click();
@@ -126,7 +126,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.evaluate(src=>{
    draft.products=draft.products.slice(0,2);
    draft.products[0].photos=[src];draft.products[0].primary=0;
-   draft.menuArtwork.templateId='opentempl:food-menu-cafe-nord';draft.menuArtwork.format='a4';
+   draft.menuArtwork.templateId='opentempl:food-menu-checker-diner';draft.menuArtwork.format='a4';
    render();
  },png);
  const rasterDownload=page.waitForEvent('download',{timeout:90000});
