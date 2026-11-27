@@ -55,6 +55,19 @@ assert anchor in s
 s=s.replace(anchor,"        const ownerDoc = await createSeiyunOwnerDesign(q.get('template')!);\n        if(ownerDoc) id = ownerDoc;\n        else { const built = await tpl.build(); id = await createDesign({ snapshot: built.snapshot, assets: built.assets }); }")
 app.write_text(s)
 
+# Clicking a tile inside the full native Templates panel must populate the
+# owner's own catalog on a new editable document, never insert stock restaurant
+# names/photos or silently mix layers into an already filled menu.
+panel=Path('apps/editor/src/panels/TemplatesPanel.tsx')
+s=panel.read_text()
+a="const [vibe, setVibe] = useState('all');";assert a in s
+s=s.replace(a,"const [vibe, setVibe] = useState(new URL(location.href).searchParams.has('seiyun_nonce') ? 'food-menu' : 'all');")
+a="                  const tpl = await loadPackTemplate(t.id, t.vibe);";assert a in s
+s=s.replace(a,"                  if (new URL(location.href).searchParams.has('seiyun_nonce')) { location.hash = '/new?template=' + encodeURIComponent(t.id); return; }\n"+a)
+a="onClick={() => applyTemplate(editor, t)}";assert a in s
+s=s.replace(a,"onClick={() => { if (new URL(location.href).searchParams.has('seiyun_nonce')) location.hash='/new?template='+encodeURIComponent(t.id); else applyTemplate(editor,t); }}")
+panel.write_text(s)
+
 editor=Path('apps/editor/src/editor/EditorScreen.tsx')
 s=editor.read_text()
 anchor="import { Editor, EditorContext } from './Editor';"
