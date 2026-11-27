@@ -132,6 +132,12 @@ function renderCreative(){
  if(!draft||!Array.isArray(draft.products))return;
  if(!['menu','showcase'].includes(tab))tab='menu';
  window.SeiyunShowcase?.destroy?.();
+ if(tab==='menu'&&window.SeiyunTemplateFonts){
+  const sources=[...(window.SeiyunOpenMenuPack||[]),...(window.SeiyunCanvixMenuPack||[])];
+  const selectedDesign=config().templateId||'';
+  const selected=sources.filter(x=>selectedDesign.endsWith(':'+x.id));
+  window.SeiyunTemplateFonts.loadFonts(document,templatesOpen?sources:selected);
+ }
  const root=$('#app');root.innerHTML=shell(tab==='menu'?menuUI():showcaseUI());
  if(templatesOpen)applyGalleryFilters();
  const n=++renderToken;
