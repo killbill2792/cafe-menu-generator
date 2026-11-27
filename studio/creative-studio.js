@@ -5,7 +5,7 @@ if(typeof document==='undefined'||!window.SeiyunCreativeCore)return;
 const core=window.SeiyunCreativeCore;
 const $=q=>document.querySelector(q);
 const esc=v=>String(v??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
-let page=0,photoId='',templatesOpen=false,brandOpen=false,search='',renderToken=0;
+let page=0,photoId='',templatesOpen=false,brandOpen=false,search='',galleryFilter='all',renderToken=0;
 const isOwnerRoute=()=>!new URLSearchParams(location.search).has('screen');
 const config=()=>{if(!draft.menuArtwork)draft.menuArtwork={};return draft.menuArtwork};
 const branding=()=>core.normalizeBrand(draft.branding||{});
@@ -37,18 +37,48 @@ function photoPanel(){
 }
 function templateTiles(){
  const lib=window.SeiyunMenuGallery,settings=config();
- return lib.registry.map(t=>{
-  const current=(settings.templateId||lib.defaults.templateId)===t.id;
-  const kind=t.source==='opentempl'?'Imported design · '+(t.vibe||'Menu'):'Classic layout · '+t.layout;
-  return '<button type="button" class="cs-design '+(current?'selected':'')+'" data-cs-design="'+esc(t.id)+'" aria-pressed="'+current+'">'+
-   lib.thumbnailHTML(draft,t)+'<span>'+esc(t.title)+'</span><span class="cs-template-category">'+esc(kind)+'</span></button>';
+ const designs=lib.distinctLayouts();
+ const specials=new Set(['food-menu-special-story','asia-onigiri-label','food-menu-lunch-week']);
+ const photoFirst=new Set(['photo-left','photo-right','photo-cards','gallery','editorial','split']);
+ const palettes={warm:'#dec8ad',dark:'#33221c',clean:'#eff7f4'};
+ return designs.map(t=>{
+  const active=t.looks.find(l=>l.id===(settings.templateId||lib.defaults.templateId))||t.looks[0];
+  const selected=t.looks.some(l=>l.id===settings.templateId);
+  const imported=['opentempl','canvix'].includes(t.source);
+  const group=imported?(specials.has(t.sourceId)?'special':'imported'):'classic';
+  const doc=imported?[...(window.SeiyunOpenMenuPack||[]),...(window.SeiyunCanvixMenuPack||[])].find(d=>d.id===t.sourceId):null;
+  const hasPhoto=imported?!!doc?.pages?.some(pg=>pg.elements?.some(e=>e.type==='image'&&!/texture|paper/i.test(e.kind||'')&&e.w*e.h<doc.width*doc.height*.68)):photoFirst.has(t.layout);
+  const kind=t.source==='canvix'?'CANVIX · ORIGINAL CAFÉ MENU':t.source==='opentempl'?(group==='special'?'FEATURE BOARD':'OPENTEMPL · ORIGINAL DESIGN'):'SEIYUN · EDITABLE LAYOUT';
+  const swatches=imported?'':'<div class="cs-look-options" aria-label="Choose a color treatment">'+t.looks.map(l=>
+   '<button type="button" data-cs-variant="'+esc(l.id)+'" class="cs-look-chip '+(l.id===settings.templateId?'active':'')+'" aria-pressed="'+(l.id===settings.templateId)+'" title="'+esc(l.title)+'"><i style="background:'+palettes[l.tone]+'"></i>'+esc(l.tone==='warm'?'Warm':l.tone==='dark'?'Dark':'Clean')+'</button>').join('')+'</div>';
+  return '<div class="cs-design-entry" data-cs-group="'+group+'" data-cs-photo-rich="'+(hasPhoto?'1':'0')+'" data-cs-query="'+esc((t.title+' '+t.source+' '+kind+' '+(t.vibe||'')).toLowerCase())+'">'+
+   '<button type="button" class="cs-design '+(selected?'selected':'')+'" data-cs-design="'+esc(active.id)+'" aria-pressed="'+selected+'">'+
+   lib.thumbnailHTML(draft,active)+'<span class="cs-design-title">'+esc(t.title)+'</span><span class="cs-template-category">'+esc(kind)+'</span></button>'+swatches+'</div>';
  }).join('');
+}
+function applyGalleryFilters(){
+ const q=search.toLowerCase().trim();
+ let count=0;
+ document.querySelectorAll('.cs-design-entry').forEach(card=>{
+  const matchesName=!q||card.dataset.csQuery?.includes(q);
+  const matchesGroup=galleryFilter==='all'||galleryFilter==='photos'&&card.dataset.csPhotoRich==='1'||
+    galleryFilter==='imported'&&['imported','special'].includes(card.dataset.csGroup)||
+    galleryFilter==='specials'&&card.dataset.csGroup==='special'||
+    galleryFilter==='classic'&&card.dataset.csGroup==='classic';
+  card.hidden=!(matchesName&&matchesGroup);
+  if(!card.hidden)count++;
+ });
+ document.querySelectorAll('[data-cs-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.csFilter===galleryFilter);b.setAttribute('aria-pressed',String(b.dataset.csFilter===galleryFilter));});
+ const label=document.getElementById('csDesignCount');
+ if(label)label.textContent=count+' distinct designs shown';
+ const empty=document.getElementById('csDesignEmpty');
+ if(empty)empty.hidden=count>0;
 }
 function menuUI(){
  const lib=window.SeiyunMenuGallery,opts=lib.getSettings(draft),data=lib.renderPages(draft,opts);
  page=Math.max(0,Math.min(data.pageCount-1,page));
- return '<div class="cs-intro"><div><small>MENU GENERATOR</small><h1>Make your menu yours.</h1><p>Your café information is already here. Tap once to select and drag. Double-tap text to change the words. Resize using the corner handles; downloads keep your edits.</p></div><div class="cs-actions"><button class="cs-btn" data-cs-action="designs">Browse '+lib.registry.length+' designs</button><button class="cs-btn" data-cs-action="brand">Customize brand</button></div></div>'+
- (templatesOpen?'<section class="cs-designs"><div class="cs-panel-head"><strong>Choose your menu design</strong><button data-cs-action="designs">×</button></div><input id="csDesignSearch" type="search" placeholder="Search designs" value="'+esc(search)+'"><div class="cs-design-grid">'+templateTiles()+'</div></section>':'')+
+ return '<div class="cs-intro"><div><small>MENU GENERATOR</small><h1>Make your menu yours.</h1><p>Your café information is already here. Tap once to select and drag. Double-tap text to change the words. Resize using the corner handles; downloads keep your edits.</p></div><div class="cs-actions"><button class="cs-btn" data-cs-action="designs">Browse '+lib.distinctLayouts().length+' layouts</button><button class="cs-btn" data-cs-action="brand">Customize brand</button></div></div>'+
+ (templatesOpen?'<section class="cs-designs"><div class="cs-panel-head"><div><strong>Choose a complete design</strong><p>31 distinct layouts: 23 imported originals plus 8 classic layouts with three color treatments.</p></div><button data-cs-action="designs">×</button></div><input id="csDesignSearch" type="search" placeholder="Search café, photo, vintage, special…" value="'+esc(search)+'"><div class="cs-design-filters">'+[['all','All'],['photos','With photos'],['imported','Source designs'],['specials','Special boards'],['classic','Classic layouts']].map(([id,label])=>'<button type="button" data-cs-filter="'+id+'" class="'+(galleryFilter===id?'active':'')+'" aria-pressed="'+(galleryFilter===id)+'">'+label+'</button>').join('')+'</div><p id="csDesignCount" class="cs-design-counter">'+lib.distinctLayouts().length+' distinct designs</p><p id="csDesignEmpty" hidden>No designs match this search. Try another term.</p><div class="cs-design-grid">'+templateTiles()+'</div></section>':'')+
  brandPanel()+
  '<section class="cs-workspace"><div class="cs-toolbar"><label>Format <select id="csFormat">'+Object.entries(lib.formats).map(([v,o])=>'<option value="'+v+'" '+(opts.format===v?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select></label><span id="csItems">'+data.productCount+' items · '+data.pageCount+' pages</span><div class="cs-actions"><button class="cs-btn" data-cs-action="add-drink">+ Product</button><button class="cs-btn" data-cs-action="pdf">PDF / Print</button><button class="cs-btn primary" data-cs-action="png">Download PNG</button><button class="cs-btn" data-cs-action="jpg">JPG</button></div></div>'+
  '<div class="cs-art-space"><div id="csArtHost" class="cs-art-host"><div id="csArtPage" class="cs-art-page">'+data.pages[page]+'</div></div>'+photoPanel()+'</div>'+
@@ -103,6 +133,7 @@ function renderCreative(){
  if(!['menu','showcase'].includes(tab))tab='menu';
  window.SeiyunShowcase?.destroy?.();
  const root=$('#app');root.innerHTML=shell(tab==='menu'?menuUI():showcaseUI());
+ if(templatesOpen)applyGalleryFilters();
  const n=++renderToken;
  if(tab==='menu')requestAnimationFrame(()=>{
   if(n!==renderToken)return;
@@ -120,6 +151,8 @@ function renderCreative(){
 render=renderCreative;
 function dataClick(ev){
  const route=ev.target.closest('[data-cs-tab]');if(route){ev.preventDefault();ev.stopImmediatePropagation();tab=route.dataset.csTab;page=0;photoId='';render();return;}
+ const chosenLook=ev.target.closest('[data-cs-variant]');if(chosenLook){ev.preventDefault();ev.stopImmediatePropagation();config().templateId=chosenLook.dataset.csVariant;page=0;photoId='';templatesOpen=false;save();render();return;}
+ const filterBtn=ev.target.closest('[data-cs-filter]');if(filterBtn){ev.preventDefault();ev.stopImmediatePropagation();galleryFilter=filterBtn.dataset.csFilter;applyGalleryFilters();return;}
  const tpl=ev.target.closest('[data-cs-design]');if(tpl){ev.preventDefault();ev.stopImmediatePropagation();const t=window.SeiyunMenuGallery.registry.find(x=>x.id===tpl.dataset.csDesign);if(!t)return;config().templateId=t.id;if(t.recommendedFormat)config().format=t.recommendedFormat;page=0;photoId='';templatesOpen=false;save();render();return;}
  const motion=ev.target.closest('[data-cs-motion]');if(motion){ev.preventDefault();ev.stopImmediatePropagation();draft.showcaseArtwork={...showcase(),sceneId:motion.dataset.csMotion};save();render();return;}
  const ph=ev.target.closest('[data-cs-photo]');if(ph&&tab==='menu'){ev.preventDefault();ev.stopImmediatePropagation();photoId=ph.dataset.csPhoto;render();return;}
@@ -172,7 +205,7 @@ document.addEventListener('click',ev=>{
 document.addEventListener('keydown',ev=>{if(ev.target.isContentEditable&&(ev.key==='Enter'||ev.key==='Escape')){ev.preventDefault();ev.target.blur();}});
 document.addEventListener('input',ev=>{
  const v=ev.target.dataset?.csZoom;if(v&&photoId){core.updatePhotoTransform(draft,photoId,{[v]:Number(ev.target.value)});if(v==='zoom')$('#csZoomNumber').textContent=ev.target.value+'%';save();refreshMenu();}
- if(ev.target.id==='csDesignSearch'){search=ev.target.value;document.querySelectorAll('[data-cs-design]').forEach(x=>x.hidden=!x.textContent.toLowerCase().includes(search.toLowerCase()));}
+ if(ev.target.id==='csDesignSearch'){search=ev.target.value;applyGalleryFilters();}
 });
 document.addEventListener('change',async ev=>{
  const el=ev.target;
