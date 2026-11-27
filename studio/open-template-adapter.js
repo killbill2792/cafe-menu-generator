@@ -89,7 +89,7 @@ function sourcePage(state,doc,page,selected,format,overrides,pageIndex){
   if(e.type==="shape")return '<div '+attr+' aria-hidden="true" style="'+css+'background:'+C(e.fill?.color,"transparent")+';border-radius:'+N(e.radius)*scale+'px"></div>';
   if(e.type==="line")return '<div '+attr+' aria-hidden="true" style="'+css+'border-top:'+N(e.width,1,0,30)*scale+'px '+(e.dash==="dashed"?"dashed":"solid")+' '+C(e.color,ink)+'"></div>';
   if(e.type==="image"){
-   if(/texture|paper/i.test(e.kind||""))return "";
+   if(/texture|paper/i.test(e.kind||"")||N(e.w)*N(e.h)>doc.width*doc.height*.68)return "";
    const owner=selected.filter(p=>p?.photos?.some(safePhoto))[photoIndex++];
    const url=safePhoto(owner?.photos?.[N(owner?.primary)||0]||owner?.photos?.[0]);
    if(!url)return "";
