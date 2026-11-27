@@ -105,3 +105,27 @@ body:has(.cs-app){margin:0;background:#f7f3ec;color:var(--cs-brown);font-family:
 @media(max-width:650px){.cs-header{padding:12px 16px}.cs-title strong{font-size:15px}.cs-tabs{order:3;width:100%;justify-content:stretch;margin:0}.cs-tab{flex:1;padding:12px 6px;font-size:11px}.cs-main{padding:15px}.cs-intro{flex-direction:column;align-items:stretch}.cs-workspace{padding:8px}.cs-toolbar .cs-actions{width:100%}.cs-art-space{padding:5px;min-height:280px}.cs-photo-panel{left:7px;right:7px;top:8px;min-width:0}.cs-showcase-tools{grid-template-columns:1fr}.cs-showcase-tools .cs-motion-grid,.cs-showcase-tools>.cs-btn,.cs-showcase-tools>strong,.cs-showcase-tools .cs-photo-thumbs{grid-column:span 1}.cs-pagination{gap:10px}.cs-pagination span{font-size:10px}.cs-ad-stage{max-width:390px}}
 
 .cs-account{background:transparent;border:0;color:#8e705d;font-size:11px;font-weight:750;cursor:pointer;text-decoration:underline;white-space:nowrap}
+
+/* The gallery previews are complete populated artwork, not abstract color sketches. */
+.cs-design-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:16px;max-height:680px;overflow:auto;padding:8px 2px}
+.cs-design{display:flex;flex-direction:column;padding:11px;min-height:315px;gap:10px;border:2px solid #dfd2c1;background:#fffdf9;border-radius:14px;box-shadow:0 5px 14px #2a19110e;transition:box-shadow .15s,transform .15s,border-color .15s}
+.cs-design:hover{border-color:#9b5d3e;box-shadow:0 13px 25px #2a19112b;transform:translateY(-2px)}
+.cs-design-preview{position:relative;display:block;height:247px;width:100%;border-radius:9px;background:#dfd5c9;overflow:hidden;border:1px solid #e2d7ca;box-shadow:inset 0 1px 12px #00000013;pointer-events:none}
+.cs-design-sheet{position:absolute;top:6px;transform-origin:top left;pointer-events:none}
+.cs-design-sheet .mg-export-page{box-shadow:0 0 18px #0003;pointer-events:none}
+.cs-design-sheet img{content-visibility:auto}
+.cs-design-caption{display:flex;flex-direction:column;gap:3px;text-align:left;min-width:0;line-height:1.25}
+.cs-design-caption strong{font-size:13px;color:#362018;line-height:1.35;font-weight:800}
+.cs-design-caption small{font-size:10px;color:#857263}
+.cs-design.selected .cs-design-caption strong{color:#804128}
+.cs-gallery-filters{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0 11px}
+.cs-gallery-filters button{border-radius:100px;background:#f6eee2;color:#634536;font-size:11px;font-weight:700;border:1px solid #e1cfbc;padding:9px 13px;cursor:pointer}
+.cs-gallery-filters button.active{color:white;border-color:#6c392a;background:#6c392a}
+.cs-gallery-note{font-size:11px;color:#806f5e;line-height:1.5}
+@media(max-width:650px){
+.cs-design-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;max-height:630px}
+.cs-design{min-width:0;min-height:295px;padding:7px}
+.cs-design-preview{height:228px}
+.cs-design-caption strong{font-size:11px}
+.cs-design-caption small{font-size:9px}
+}
