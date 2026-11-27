@@ -60,6 +60,7 @@
   sceneId:['cinematic-reveal','ingredient-motion','product-spotlight','fresh-energy','warm-cafe'].includes(value.sceneId)?value.sceneId:'',
   speed:numeric(value.speed,.25,2.5,1),duration:numeric(value.duration,3,15,7),
   background:hex(value.background,'#2e1815'),
+  autoCutout:value.autoCutout!==false,
   layerOverrides:typeof value.layerOverrides==='object'&&value.layerOverrides&&!Array.isArray(value.layerOverrides)?value.layerOverrides:{}
  };}
  function recordingFormat(supported){if(typeof supported!=='function')return null;
