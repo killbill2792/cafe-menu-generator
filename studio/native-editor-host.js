@@ -66,7 +66,7 @@ function onMessage(ev){
  const d=ev.data;if(!d||d.nonce!==a.nonce||typeof d.type!=='string')return;
  if(d.type==='SEIYUN_NATIVE_READY'){
   if(a.sent)return;a.sent=true;
-  a.frame.contentWindow.postMessage({type:'SEIYUN_NATIVE_INIT',nonce:a.nonce,catalog:catalog(a.type,a.state,a.core)},location.origin);
+  a.frame.contentWindow.postMessage({type:'SEIYUN_NATIVE_INIT',nonce:a.nonce,catalog:a.preparedCatalog||catalog(a.type,a.state,a.core)},location.origin);
  }
  if(d.type==='SEIYUN_NATIVE_LOADED')setStatus(a.type==='menu'?'Full OpenTempl menu editor ready. Use its native undo, layers and export controls.':'Full Motion Studio editor ready. Choose among its native motion presets.');
  if(d.type==='SEIYUN_NATIVE_ERROR')setStatus('Native editor: '+String(d.error||'Could not load').slice(0,220),true);
@@ -85,6 +85,21 @@ function onMessage(ev){
   setStatus('Artwork saved to your private draft. Native undo/redo and downloads are still available.');
  }
 }
+async function nonDestructiveCutout(url){
+ if(!url||!root.SeiyunPhotoCutout?.make)return url;
+ return new Promise(resolve=>{
+  const image=new Image();image.crossOrigin='anonymous';
+  image.onload=()=>{
+   try{const result=root.SeiyunPhotoCutout.make(image,1400);
+    if(result.changed&&typeof result.asset.toDataURL==='function'){
+     resolve(result.asset.toDataURL('image/png'));return;
+    }
+   }catch{/* CORS denied canvas access: use unchanged approved photograph. */}
+   resolve(url);
+  };
+  image.onerror=()=>resolve(url);image.src=url;
+ });
+}
 async function mount(state,type,core,save){
  dispose();
  const frame=$('#nativeEditorFrame');if(!frame)return;
@@ -92,6 +107,10 @@ async function mount(state,type,core,save){
  if(!url){setStatus('Please sign in to open this editor.',true);return;}
  active={frame,nonce:n,type,state,core,save,sent:false};
  root.addEventListener('message',onMessage);
+ const preparedCatalog=catalog(type,state,core);
+ if(type==='motion')preparedCatalog.photoUrl=await nonDestructiveCutout(preparedCatalog.photoUrl);
+ if(!active||active.nonce!==n)return;
+ active.preparedCatalog=preparedCatalog;
  try{
   const head=await fetch(url,{method:'HEAD',cache:'no-store'});
   if(!active||active.nonce!==n)return;
