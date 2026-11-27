@@ -51,3 +51,21 @@ test('layout size overrides change export geometry and clamp impossible input',(
  assert(result.pages.join('').includes('left:12px'));
  assert(result.pages.join('').includes('width:420px'));
 });
+
+test('native image slots use real owner photos, remain selectable and honor zoom without crop',()=>{
+ const t=pack.find(x=>x.id==='food-menu-cafe-nord'),state=create(4);
+ state.menuArtwork={photoTransformByProduct:{'drink-0':{zoom:165,x:14,y:-6}}};
+ const h=adapter.render(state,t).pages.join('');
+ assert(h.includes('data-cs-photo="drink-0"'));
+ assert(h.includes('scale(1.65)'));
+ assert(h.includes('https://owner.example.org/seiyun.png'));
+ assert(!h.includes('src="undefined"'));
+});
+test('brand logos are optional: imported document uses text or user-provided logo',()=>{
+ const t=pack.find(x=>x.id==='food-menu-cafe-nord'),state=create(4);
+ const plain=adapter.render(state,t).pages.join('');
+ assert(plain.includes('Seiyun Yemeni Coffee'));
+ state.branding.showLogo=true;state.branding.logoUrl='https://owner.example.org/logo.png';
+ const logo=adapter.render(state,t).pages.join('');
+ assert(logo.includes('src="https://owner.example.org/logo.png"'));
+});
