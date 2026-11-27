@@ -82,7 +82,7 @@ function sourcePage(state,doc,page,selected,format,overrides,pageIndex){
  let catNo=0,photoUsed=false;
  const shapes=page.elements.map((e,i)=>{
   if(!["text","shape","line","image"].includes(e.type))return "";
-  const m=mapped[i],key=m?.kind==="brand"?"brand":m?.kind==="name"&&m.product?"product:"+m.product.id:"source:"+i;
+  const m=mapped[i],key=m?.kind==="brand"?"brand":m?.product?"product:"+m.product.id+(m.kind==="name"?"":m.kind==="desc"?":ingredients":":price"):"source:"+i;
   const geom=boundedOverride(overrides?.[key],{x:N(e.x)*scale+dx,y:N(e.y)*scale+dy,w:N(e.w)*scale,h:N(e.h)*scale,fontSize:font(e)*scale},w,h);
   const css="position:absolute;left:"+Number(geom.x.toFixed(2))+"px;top:"+Number(geom.y.toFixed(2))+"px;width:"+Number(geom.w.toFixed(2))+"px;height:"+Number(geom.h.toFixed(2))+"px;opacity:"+N(e.opacity,1,0,1)+";transform:rotate("+N(e.rotation,0,-360,360)+"deg);";
   const attr='data-native-element="'+i+'" data-layout-key="'+escape(key)+'"';
@@ -112,7 +112,7 @@ function sourcePage(state,doc,page,selected,format,overrides,pageIndex){
   const fs=Math.max(7,Math.min(geom.fontSize||font(e)*scale,Math.max(9,geom.w/(Math.max(1,String(value).length)*.55))));
   const ff=String(e.fontFamily||"Georgia").replace(/[^a-zA-Z0-9 ,\-]/g,"").slice(0,70)||"Georgia";
   const style=css+"font-family:'"+ff+"',Georgia,serif;font-size:"+fs.toFixed(2)+"px;font-weight:"+N(e.fontWeight,500,100,900)+";color:"+C(e.color,ink)+";line-height:"+N(e.lineHeight,1.2,.7,2.4)+";text-align:"+(['left','right','center'].includes(e.align)?e.align:"left")+";white-space:pre-wrap;overflow:hidden;overflow-wrap:anywhere;";
-  return '<div '+attr+' '+productAttr+' '+edit+' class="ot-native-text" style="'+style+'">'+escape(value)+'</div>';
+  return '<div '+attr+' '+productAttr+' '+(m?.product?'data-cs-product-id="'+escape(m.product.id)+'"':'')+' '+edit+' class="ot-native-text" style="'+style+'">'+escape(value)+'</div>';
  }).join("");
  return {html:'<section class="mg-export-page ot-source-page" data-opentempl-source="'+escape(doc.id)+'" data-page="'+(pageIndex+1)+'" data-count="'+selected.length+'" style="--mg-width:'+w+'px;--mg-height:'+h+'px;width:'+w+'px;height:'+h+'px;background:'+bg+';color:'+ink+'"><div class="ot-source-layer">'+shapes+'</div></section>',
   bg,ink,slotCount:slots.length};
