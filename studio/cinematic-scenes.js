@@ -88,7 +88,7 @@ function drawFrame(ctx,img,p,brand,opts,progress,w,h){
   px=w*(.12+.76*((i*37%97)/97)),py=h*(.18+.56*((i*53%89)/89))+Math.sin(ph)*h*.013;
   ctx.fillStyle=acc+Math.round(65+100*Math.abs(Math.sin(ph))).toString(16).padStart(2,"0");
   ctx.beginPath();ctx.arc(px,py,w*(.002+(i%4)*.0012),0,2*Math.PI);ctx.fill();}
- ctx.textAlign="center";ctx.fillStyle=c.id==='product-spotlight'?'#35271f':'#fff8ec';ctx.font="bold "+Math.round(w*.052)+"px Georgia,serif";
+ ctx.textAlign="center";ctx.fillStyle=c.id==='product-spotlight'?'#35271f':'#fff8ec';ctx.font="bold "+Math.round(w*.077)+"px Georgia,serif";
  ctx.fillText(String(brand.name||"Your Café"),w/2,h*.085,w*.86);
  if(c.ingredients?.length){
   const spots=[[.16,.26],[.79,.40],[.23,.62]];
@@ -110,7 +110,7 @@ function drawFrame(ctx,img,p,brand,opts,progress,w,h){
  const lay=c.layers.title;
  ctx.fillStyle=acc;ctx.font="bold "+Math.round(w*.022*lay.scale)+"px Arial";
  ctx.fillText("CRAFTED TO BE SAVORED",w*lay.x/100,h*(lay.y-8)/100,w*.86);
- ctx.fillStyle=c.id==='product-spotlight'?'#33241b':'#fff9ec';ctx.font="bold "+Math.round(w*lay.fontSize/1080*lay.scale)+"px Georgia,serif";
+ ctx.fillStyle=c.id==='product-spotlight'?'#33241b':'#fff9ec';ctx.font="bold "+Math.round(w*lay.fontSize/400*lay.scale)+"px Georgia,serif";
  let rows=[],line="";
  for(const word of String(p?.name||"Your drink").split(/\s+/)){
   const test=(line?line+" ":"")+word;
@@ -119,7 +119,7 @@ function drawFrame(ctx,img,p,brand,opts,progress,w,h){
  rows.slice(0,2).forEach((v,i)=>ctx.fillText(v,w*lay.x/100,h*(lay.y+i*4)/100,w*.86));
  ctx.fillStyle=c.id==='product-spotlight'?'#563a2b':'#eddbc9';ctx.font=Math.round(w*.023)+"px Arial";
  ctx.fillText(String(p?.ingredients||"").slice(0,85),w*lay.x/100,h*(lay.y+7)/100,w*.83);
- if(p?.sizes?.[0]?.price!==undefined){ctx.fillStyle=c.id==='product-spotlight'?'#33241b':'#fff';ctx.font="bold "+Math.round(w*.038)+"px Arial";
+ if(p?.sizes?.[0]?.price!==undefined){ctx.fillStyle=c.id==='product-spotlight'?'#33241b':'#fff';ctx.font="bold "+Math.round(w*.061)+"px Arial";
  ctx.fillText("$"+Number(p.sizes[0].price).toFixed(2),w*lay.x/100,h*(lay.y+12)/100,w*.86)}
 }
 return {registry,resolve,normalizeLayer,frameAt,render,drawFrame,photoUrl};
