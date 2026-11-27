@@ -32,7 +32,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  assert.equal(await page.evaluate(()=>draft.branding.name),'Seiyun Studio Cafe','inline brand edit reaches canonical draft');
  await page.evaluate(src=>{draft.products[0].photos=[src];draft.products[0].primary=0;render();},png);
  await page.locator('[data-cs-photo="ref-01"]').first().click();
- await page.locator('[data-cs-zoom="zoom"]').fill('165');
+ await page.locator('[data-cs-zoom="zoom"]').evaluate(el=>{el.value='165';el.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.match(await page.locator('[data-menu-product="ref-01"] img').first().getAttribute('style'),/scale\(1\.65\)/,'real photo is zoomed without changing its box');
  await page.locator('[data-cs-action="designs"]').click();
  assert.equal(await page.locator('.cs-design').count(),24,'existing choices preserved');
@@ -66,4 +66,4 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  assert(overflow<=5,'mobile interface should not horizontally overflow: '+overflow);
  console.log('Mobile horizontal overflow:',overflow);
  await browser.close();await new Promise(resolve=>server.close(resolve));
-})().catch(async e=>{console.error(e);server.close();process.exitCode=1});
+})().catch(e=>{console.error(e);server.close();setTimeout(()=>process.exit(1),2000);});
