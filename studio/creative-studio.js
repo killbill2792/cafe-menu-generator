@@ -77,17 +77,24 @@ function refreshMenu(){
  fitPage();
 }
 function showcaseUI(){
- const cfg=showcase(),p=core.chooseProduct(draft,cfg.productId),photo=core.selectedShowcasePhoto(p),b=branding();
- const products=draft.products.filter(x=>x.enabled!==false);
- return '<div class="cs-intro"><div><small>PRODUCT SHOWCASE</small><h1>Make every drink memorable.</h1><p>Choose a product and a ready-made motion. Watch it here; download the result.</p></div></div>'+
- '<div class="cs-showcase-grid"><section class="cs-showcase-tools"><label class="cs-field">Drink<select id="csProductSelect">'+products.map(x=>'<option value="'+esc(x.id)+'" '+(p?.id===x.id?'selected':'')+'>'+esc(x.name||'New drink')+'</option>').join('')+'</select></label>'+
- '<strong>Product photos</strong><div class="cs-photo-thumbs">'+(p?.photos?.length?p.photos.map((url,i)=>'<button data-cs-ad-photo="'+i+'" class="'+(photo===url?'selected':'')+'"><img src="'+esc(url)+'" alt="Photo '+(i+1)+'"></button>').join(''):'<p>No photo uploaded yet.</p>')+'</div>'+
- '<button class="cs-btn primary" data-cs-action="ad-upload">+ Upload photo</button><strong>Animation style</strong><div class="cs-motion-grid">'+core.motionModes().map(m=>'<button data-cs-motion="'+m+'" class="'+(cfg.mode===m?'selected':'')+'">'+m[0].toUpperCase()+m.slice(1)+'</button>').join('')+'</div>'+
- '<label class="cs-field">Background<input id="csAdColor" type="color" value="'+cfg.background+'"></label><label class="cs-field">Speed <input id="csAdSpeed" type="range" min="0.25" max="2.5" step="0.25" value="'+cfg.speed+'"></label>'+
- '<label class="cs-field">Video duration<select id="csAdDuration">'+[5,7,10,15].map(n=>'<option value="'+n+'" '+(Number(cfg.duration)===n?'selected':'')+'>'+n+' seconds</option>').join('')+'</select></label></section>'+
- '<section class="cs-showcase-preview"><div id="csAdStage" class="cs-ad-stage" style="--cs-ad-bg:'+cfg.background+'"><div id="csMotion" class="cs-motion"></div><div class="cs-ad-brand">'+esc(b.name)+'</div><div class="cs-ad-caption"><span>CRAFTED TO BE SAVORED</span><h2 data-cs-edit="showcase.title">'+esc(p?.name||'Your drink')+'</h2><p>'+esc(p?.description||p?.ingredients||'')+'</p><strong>'+esc(p?.sizes?.[0]?money(p.sizes[0].price):'')+'</strong></div></div>'+
- '<div class="cs-actions cs-export"><button class="cs-btn" data-cs-action="play">Pause / Play</button><button class="cs-btn primary" data-cs-action="video">Download video</button><button class="cs-btn" data-cs-action="gif">Download GIF</button></div>'+
- '<div class="cs-actions"><button class="cs-btn" data-cs-action="cutout">Remove plain white background</button></div><p id="csMessage" class="cs-footnote">'+(photo?'Motion preview uses the selected drink photograph.':'Upload a photo to activate your animation.')+'</p></section></div>';
+ const cfg=showcase(),p=core.chooseProduct(draft,cfg.productId),photo=core.selectedShowcasePhoto(p);
+ const products=draft.products.filter(x=>x.enabled!==false),scenes=window.SeiyunHeroScenes?.MODES||[];
+ return '<div class="cs-intro"><div><small>PRODUCT SHOWCASE</small><h1>One drink. An unforgettable impression.</h1><p>Choose your drink, preview real cinematic motion, move the cup or text directly on the artwork, then download.</p></div></div>'+
+ '<div class="cs-showcase-grid"><section class="cs-showcase-tools"><label class="cs-field">Your product<select id="csProductSelect">'+products.map(x=>'<option value="'+esc(x.id)+'" '+(p?.id===x.id?'selected':'')+'>'+esc(x.name||'New drink')+'</option>').join('')+'</select></label>'+
+ '<div class="cs-choose-photos"><strong>Product photograph</strong><div class="cs-photo-thumbs">'+(p?.photos?.length?p.photos.map((url,i)=>'<button data-cs-ad-photo="'+i+'" class="'+(photo===url?'selected':'')+'"><img src="'+esc(url)+'" alt="Photo '+(i+1)+'"></button>').join(''):'<p>Upload a real drink photograph to begin.</p>')+'</div><button class="cs-btn" data-cs-action="ad-upload">+ Upload photo</button></div>'+
+ '<strong>Choose an advertising scene</strong><div class="cs-scene-gallery">'+scenes.map(m=>'<button type="button" class="cs-scene-option '+(cfg.mode===m.id?'selected':'')+'" data-cs-motion="'+m.id+'"><canvas width="180" height="280" data-cs-scene-thumb="'+m.id+'" aria-hidden="true"></canvas><span><b>'+esc(m.name)+'</b><small>'+esc(m.short)+'</small></span></button>').join('')+'</div>'+
+ '<details class="cs-ad-customize"><summary>Background & export options</summary><div class="cs-ad-fields"><label class="cs-field">Output size<select id="csAdFormat">'+[['portrait','Portrait 9:16'],['landscape','Landscape 16:9'],['square','Square 1:1']].map(([v,n])=>'<option value="'+v+'" '+(cfg.format===v?'selected':'')+'>'+n+'</option>').join('')+'</select></label>'+
+ '<label class="cs-field">Custom background <input id="csAdColor" type="color" value="'+(cfg.customBackground?cfg.background:'#6b3928')+'"></label>'+
+ '<label class="cs-field">Animation speed<input id="csAdSpeed" type="range" min=".25" max="2.5" step=".25" value="'+cfg.speed+'"></label>'+
+ '<label class="cs-field">Length<select id="csAdDuration">'+[5,7,10,15].map(n=>'<option value="'+n+'" '+(Number(cfg.duration)===n?'selected':'')+'>'+n+' seconds</option>').join('')+'</select></label>'+
+ '<label class="cs-check"><input id="csAutoCutout" type="checkbox" '+(cfg.autoCutout?'checked':'')+'> Automatically remove simple white photo backgrounds</label></div></details></section>'+
+ '<section class="cs-showcase-preview"><div class="cs-preview-topline"><span>LIVE PRODUCT AD</span><span>'+esc(cfg.mode)+' · '+esc(cfg.format)+'</span></div>'+
+ '<div id="csAdStage" class="cs-ad-stage cs-stage-'+cfg.format+'"><div id="csMotion" class="cs-motion"></div></div>'+
+ '<p class="cs-artwork-help">Tap the drink or any text to select it. Drag to reposition; drag its corner to resize. Double-tap text to edit.</p>'+
+ '<div class="cs-actions cs-export"><button class="cs-btn" data-cs-action="play">Pause / Play</button><button class="cs-btn" data-cs-action="reset-layers">Reset positions</button></div>'+
+ '<div class="cs-actions cs-export"><button class="cs-btn primary" data-cs-action="video">Download MP4 / WebM</button><button class="cs-btn" data-cs-action="gif">GIF</button><button class="cs-btn" data-cs-action="poster">Still PNG</button></div>'+
+ '<div class="cs-actions"><button class="cs-btn" data-cs-action="cutout">Save transparent photo copy</button></div>'+
+ '<p id="csMessage" class="cs-footnote">'+(photo?'Your selected product is ready. Live preview and downloads share the exact same scene.':'Upload a photo to see the single-product cinematic advertisement.')+'</p></section></div>';
 }
 function money(value){try{return new Intl.NumberFormat('en-US',{style:'currency',currency:draft.currency||'USD'}).format(value);}catch{return '$'+Number(value).toFixed(2);}}
 function renderCreative(){
@@ -123,7 +130,8 @@ function dataClick(ev){
  if(cmd==='add-drink'){draft.products.push({id:uid(),name:'New drink',category:'Other',description:'',ingredients:'',photos:[],primary:0,enabled:true,sizes:[{id:uid(),name:'Regular',price:0}]});page=999;save();render();return;}
  if(['pdf','png','jpg'].includes(cmd)){b.disabled=true;Promise.resolve().then(()=>cmd==='pdf'?window.SeiyunMenuGallery.printMenu():window.SeiyunMenuGallery.exportImages(cmd)).then(()=>notify(cmd==='pdf'?'Use Save as PDF in the print window.':'Artwork download started.')).catch(e=>notify('Export failed: '+e.message,true)).finally(()=>b.disabled=false);return;}
  if(cmd==='play'){window.SeiyunShowcase?.toggle?.();return;}
- if(['video','gif','cutout'].includes(cmd)){b.disabled=true;const fn=cmd==='video'?'downloadVideo':cmd==='gif'?'downloadGif':'removeWhiteBackground';Promise.resolve(window.SeiyunShowcase?.[fn]?.(draft,showcase(),core)).then(result=>{if(result?.message)notify(result.message);if(result?.updated){save();render();}}).catch(e=>notify(e.message||String(e),true)).finally(()=>b.disabled=false);}
+ if(cmd==='reset-layers'){window.SeiyunShowcase?.resetLayers?.(draft);notify('Product and text positions reset.');return;}
+ if(['video','gif','cutout','poster'].includes(cmd)){b.disabled=true;const fn=cmd==='video'?'downloadVideo':cmd==='gif'?'downloadGif':cmd==='poster'?'downloadStill':'removeWhiteBackground';Promise.resolve(window.SeiyunShowcase?.[fn]?.(draft,showcase(),core)).then(result=>{if(result?.message)notify(result.message);if(result?.updated){save();render();}}).catch(e=>notify(e.message||String(e),true)).finally(()=>b.disabled=false);}
 }
 document.addEventListener('click',dataClick,true);
 document.addEventListener('click',ev=>{
@@ -149,7 +157,9 @@ document.addEventListener('change',async ev=>{
  if(el.id==='csShowLogo'){draft.branding={...branding(),showLogo:el.checked};save();render();}
  if(el.id==='csLogoFile'){const file=el.files?.[0];el.value='';if(!file)return;try{if(!window.seiyunCloud?.upload)throw Error('Online login required for logo upload');const url=await window.seiyunCloud.upload(file);draft.branding={...branding(),logoUrl:url,showLogo:true};save();render();}catch(e){notify('Logo upload failed: '+e.message,true);}}
  if(el.id==='csProductSelect'){draft.showcaseArtwork={...showcase(),productId:el.value};save();render();}
- if(el.id==='csAdColor'){draft.showcaseArtwork={...showcase(),background:el.value};save();render();}
+ if(el.id==='csAdColor'){draft.showcaseArtwork={...showcase(),background:el.value,customBackground:true};save();render();}
+ if(el.id==='csAdFormat'){draft.showcaseArtwork={...showcase(),format:el.value};save();render();}
+ if(el.id==='csAutoCutout'){draft.showcaseArtwork={...showcase(),autoCutout:el.checked};save();render();}
  if(el.id==='csAdSpeed'){draft.showcaseArtwork={...showcase(),speed:Number(el.value)};save();window.SeiyunShowcase?.update?.(draft,showcase(),core);}
  if(el.id==='csAdDuration'){draft.showcaseArtwork={...showcase(),duration:Number(el.value)};save();}
 });
