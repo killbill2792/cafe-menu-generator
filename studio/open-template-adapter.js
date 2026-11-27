@@ -157,11 +157,23 @@ function render(state,doc,options={}){
   const page=sourcePage(state,doc,originalPage,all.slice(cursor,cursor+n),format,overrides,pages.length);
   pages.push(page.html);cursor+=Math.min(n,all.length-cursor);bg=page.bg;ink=page.ink;
  }
+ const eligible=doc.pages.map(page=>({page,slots:slotPlan(page,doc).length})).filter(x=>x.slots>0);
+ const mostDense=[...eligible].sort((a,b)=>b.slots-a.slots)[0];
+ // Keep actual menu designs on every output page. One-product features still
+ // get a compact continuation menu, rather than printing dozens of posters.
+ const repeatNative=mostDense?.slots>=5&&!['food-menu-lunch-week','food-menu-special-story','asia-onigiri-label'].includes(doc.id);
  const limit=N(options.companionCapacity,formats[format].h/formats[format].w>1.5?12:18,4,24);
  while(cursor<all.length){
-  const chunk=all.slice(cursor,cursor+limit);
-  pages.push(companionPage(state,doc,chunk,format,pages.length,bg,ink));
-  cursor+=chunk.length;
+  if(repeatNative){
+   const chunk=all.slice(cursor,cursor+mostDense.slots);
+   const repeated=sourcePage(state,doc,mostDense.page,chunk,format,overrides,pages.length);
+   pages.push(repeated.html);
+   cursor+=chunk.length;
+  }else{
+   const chunk=all.slice(cursor,cursor+limit);
+   pages.push(companionPage(state,doc,chunk,format,pages.length,bg,ink));
+   cursor+=chunk.length;
+  }
  }
  return {pages,productCount:all.length,pageCount:pages.length,options:{...options,format},sourceId:doc.id};
 }
