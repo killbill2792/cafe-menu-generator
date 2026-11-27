@@ -27,14 +27,15 @@ const server=http.createServer((req,res)=>{
   res.writeHead(200,{'content-type':type[path.extname(filepath)]||'application/octet-stream','access-control-allow-origin':'*'});res.end(data);
  });
 });
+let browserInstance;
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const origin='http://127.0.0.1:'+server.address().port;
- const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});browserInstance=browser;
  const shots=path.resolve(__dirname,'../artifacts');fs.mkdirSync(shots,{recursive:true});
  for(const mode of ['menu','motion']){
   const context=await browser.newContext({viewport:{width:1366,height:820}});
-  const page=await context.newPage();const errors=[];
+  const page=await context.newPage();page.setDefaultTimeout(12000);const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/native-harness?mode='+mode);
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='LOADED',{timeout:60000});
@@ -73,7 +74,8 @@ const server=http.createServer((req,res)=>{
  // Mobile layouts use the upstream editors' own touch UI, not our CSS-grid canvas.
  for(const mode of ['menu','motion']){
    const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
-   const page=await context.newPage();
+   const page=await context.newPage();page.setDefaultTimeout(12000);
+   console.log('NATIVE_MOBILE_TEST_START',mode);
    await page.goto(origin+'/native-harness?mode='+mode);
    await page.waitForFunction(()=>document.querySelector('#status').textContent==='LOADED',{timeout:60000});
    const frame=page.frameLocator('#native');
@@ -82,11 +84,11 @@ const server=http.createServer((req,res)=>{
    if(mode==='menu'){
      const item=frame.locator('svg g[data-id]').filter({hasText:'Seiyun Coffee 0'}).first();
      await item.waitFor({timeout:12000});
-     await item.tap({force:true});
+     await item.tap({force:true,timeout:8000});
    }
    await page.screenshot({path:path.join(shots,'native-'+mode+'-mobile.png'),fullPage:false});
    await context.close();
  }
  await browser.close();server.close();
  console.log('NATIVE_REAL_EDITORS_BROWSER_PASSED: owner catalog and full native motion library loaded');
-})().catch(e=>{console.error(e);server.close();process.exitCode=1;});
+})().catch(async e=>{console.error('NATIVE_BROWSER_ACCEPTANCE_FAILURE',e);try{await browserInstance?.close()}catch{}server.close();process.exit(1);});
