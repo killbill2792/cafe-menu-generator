@@ -44,6 +44,17 @@ s=s.replace(anchor,"""const nativeTenant = new URL(location.href).searchParams.g
 const dbName = (id: string) => nativeTenant && /^[a-f0-9-]{36}$/i.test(nativeTenant) ? `seiyun-native-${nativeTenant}-design-${id}` : `tavla-design-${id}`;""")
 ids.write_text(s)
 
+# Native template selection must rebind the owner's catalog, not open sample
+# names/prices from the upstream template. The original editor UI is unchanged.
+app=Path('apps/editor/src/App.tsx')
+s=app.read_text()
+anchor="import { createDesign } from './io/designs';";assert anchor in s
+s=s.replace(anchor,anchor+"\nimport { createSeiyunOwnerDesign } from './integrations/seiyunNative';")
+anchor="        const built = await tpl.build();\n        id = await createDesign({ snapshot: built.snapshot, assets: built.assets });"
+assert anchor in s
+s=s.replace(anchor,"        const ownerDoc = await createSeiyunOwnerDesign(q.get('template')!);\n        if(ownerDoc) id = ownerDoc;\n        else { const built = await tpl.build(); id = await createDesign({ snapshot: built.snapshot, assets: built.assets }); }")
+app.write_text(s)
+
 editor=Path('apps/editor/src/editor/EditorScreen.tsx')
 s=editor.read_text()
 anchor="import { Editor, EditorContext } from './Editor';"
