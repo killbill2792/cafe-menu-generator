@@ -425,3 +425,33 @@ User supplied screenshots from our earlier conversation showing the *proposed* t
 - Test success proved two tabs, editable text, photo zoom and valid GIF/MP4 mechanics, **not** acceptance against the owner's visual, template-breadth and freeform editing requirements; one browser test used a dummy photo. Tests/merge should never have been presented as proof the requested product was done.
 
 **Accountability and next sequence:** Acknowledge scope substitution and misleading completion claims; do not suggest user misunderstood the proposal or repeatedly re-ask approval of already approved goals. Present actual missing work as two independent workstreams: (1) integrate licensed actual multi-source menu template documents with data mapping, WYSIWYG drag/resize and content-aware packing; (2) true one-product cinematic scene gallery with animated backgrounds/ingredients, correct cutouts and drag/resize of hero/text layers, same live/export composition. Keep existing Supabase catalog and no per-use AI as the baseline. Before implementation, document testable acceptance criteria and prove with real Seiyun data and at least two contrasting drinks, mobile touch, page counts and downloaded artifacts. Do not call completion until real user acceptance and verification. No application code changed in this audit.
+
+
+## 2026-11-26/27 — Recovered original open-source template agreement and rebuilt distinct gallery (feature branch)
+
+**Owner authorization:** User explicitly ordered completion of the agreed full menu + cinematic product artwork experience without another proposal loop. Owner also asked to read the original conversation and locate the MIT repository behind the historical “more than 24” claim. This work is on `feat/real-template-browser-cinematic-hero`; **DO NOT tell the owner that GitHub main or Cloudflare production contains it until independently verified.**
+
+**Historical source audit, verified against real current source and the earlier chat:**
+- The shipped 24 were **8 Seiyun-authored FAMILY compositions × 3 color LOOKs**, with inspiration from Restaurant Menu Pages, Caresdev, Themefisher and Colorlib Tavola, **NOT 24 imported open-source templates**. See `studio/MENU_GALLERY_SOURCES.md`.
+- The referenced other MIT design library is **Canvix** (`mir-ashiq/canvix`), whose current source `src/lib/templates/index.ts` defines **122 original designs + 244 computed style/typography variants = 366 across all categories**. Its two original complete café print menus are `artisan-menu` and `cafe-menu`, both now vendored with MIT notice and source geometry. Other food-related records are promo graphics, not full menus. **Do not falsely claim 366 cafe menus.**
+- OpenTempl has hundreds of all-category items, from which **21 relevant original café/menu/food/price-list designs** were actually vendored under `studio/vendor/opentempl`. MIT LICENSE/provenance bundled.
+- Real gallery now represents **31 independently different layouts = 21 OpenTempl + 2 Canvix + 8 Seiyun**, with three selectable classic variants each (**47 registered combinations**). Gallery cards use the actual auto-populated first page, not abstract swatches; filter/search by source/photos/specials and show variants on the same composition card.
+
+**Implementation architecture:** Existing Supabase owner catalog/brand/photos → allowlisted two-source native artboard adapters + legacy layout renderer → direct Moveable selection/touch resize/position → template-specific draft overrides → same menu content for print/PDF and PNG/JPG. Source menu designs repeat on overflow pages when applicable, preserving the selected appearance; single-product feature board special case still uses a compact continuation. Source font-family styling restored with explicit allowlisted Google font CSS; no third-party sample photography. Product Showcase now has five single-drink presets (Cinematic Reveal, Ingredient Motion, Product Spotlight, Fresh Energy, Warm Café), with flavor-specific animated environment (saffron strands, matcha powder, glow/particles), one owner photo, hero/text drag/resize and deterministic browser-local MP4/WebM/GIF/PNG output. No recurring AI.
+
+**Evidence gates (retain checklist for continuing chats):**
+- [x] Source attribution and source-count audit, including Canvix originals vs variants
+- [x] Specs `0003` / `0004` and implementation plans written with STRIDE
+- [x] Tests-first for source adapter, full catalog mapping, title/price owner-binding, photo safety, 31 layouts and 47 combinations
+- [x] Locally vendored Moveable MIT; actual mouse/touch pointer resize on scaled artboards, bounds persisted to draft
+- [x] Chromium tests confirmed GIF89a, encoded native MP4, full-size PNG, browser Print/PDF, 390px touch interaction, no horizontal overflow
+- [x] Changed ordinary source menu overflow to repeat the selected source page, not generic white fallback
+- [x] Single-product showcase five scene presets and ingredient graphics
+- [ ] **Fresh final full CI run + code review after latest change, including 26-product multipage ZIP/PDF and visual screenshots**
+- [ ] **Sign-in with a real owner test account**, validate Supabase Storage signed URLs/CORS, existing owned catalog, actual uploaded photos and persisted revisions
+- [ ] **Physical iPhone Safari** touch/edit/export check (CI Chromium emulation is not Safari)
+- [ ] **Explicit production merge/deployment verification** on Cloudflare URL, not inferred from PR/CI
+
+**Unresolved product limits, never silently close them:** True photorealistic pouring/mixing from one still photo cannot be synthesized with deterministic scene layers; requires licensed footage or 3D/optional generative assets. SVG/CSS flavor particles are stylized, not physical liquid simulation. Source print menus with very few native slots can require additional pages; all 26 products preserved, but visual/print clipping should be checked with actual owner lengthy descriptions. Native browser MP4 availability is codec-specific; GIF or WebM fallback where appropriate. Source fonts depend on Google Fonts availability; offline fallback expected. User wants **portable files, not a TV player or forced hosting**.
+
+**The safe finish path:** Wait for green branch CI, visually inspect representative gallery/multipage/sample owner photos, request review and create PR without inventing production deployment. Do not mark specs as fully shipped or claim a signed-in site is complete until remaining checklist is verified.
