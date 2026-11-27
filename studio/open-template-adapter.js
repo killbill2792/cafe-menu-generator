@@ -86,7 +86,7 @@ function sourcePage(state,doc,page,selected,format,overrides,pageIndex){
   const geom=boundedOverride(overrides?.[key],{x:N(e.x)*scale+dx,y:N(e.y)*scale+dy,w:N(e.w)*scale,h:N(e.h)*scale,fontSize:font(e)*scale},w,h);
   const css="position:absolute;left:"+Number(geom.x.toFixed(2))+"px;top:"+Number(geom.y.toFixed(2))+"px;width:"+Number(geom.w.toFixed(2))+"px;height:"+Number(geom.h.toFixed(2))+"px;opacity:"+N(e.opacity,1,0,1)+";transform:rotate("+N(e.rotation,0,-360,360)+"deg);";
   const attr='data-native-element="'+i+'" data-layout-key="'+escape(key)+'"';
-  if(e.type==="shape")return '<div '+attr+' aria-hidden="true" style="'+css+'background:'+C(e.fill?.color,"transparent")+';border-radius:'+N(e.radius)*scale+'px"></div>';
+  if(e.type==="shape")return '<div '+attr+' aria-hidden="true" style="'+css+'box-sizing:border-box;background:'+C(e.fill?.color,"transparent")+';'+(e.stroke?.color?'border:'+N(e.stroke.width,1,0,25)*scale+'px solid '+C(e.stroke.color,ink)+';':'')+'border-radius:'+N(e.radius)*scale+'px"></div>';
   if(e.type==="line")return '<div '+attr+' aria-hidden="true" style="'+css+'border-top:'+N(e.width,1,0,30)*scale+'px '+(e.dash==="dashed"?"dashed":"solid")+' '+C(e.color,ink)+'"></div>';
   if(e.type==="image"){
    if(/texture|paper/i.test(e.kind||"")||N(e.w)*N(e.h)>doc.width*doc.height*.68)return "";
@@ -105,7 +105,8 @@ function sourcePage(state,doc,page,selected,format,overrides,pageIndex){
    if(m.kind==="desc"){value=m.product.ingredients||m.product.description||"";edit='data-cs-edit="ingredients"';}
   }else if(!m){
    const t=String(e.text||"").trim();
-   if(/^(menu|our menu|drinks|special|coffee|tea|food|hot|cold|extras|lunch|bakery|prices|price list)$/i.test(t))
+   if(e.role==="decorative"&&t.length<=5)value=t;
+   else if(/^(menu|our menu|drinks|special|coffee|tea|food|hot|cold|extras|lunch|bakery|prices|price list|espresso bar|seasonal|from the oven)$/i.test(t))
     value=/^(menu|drinks|prices)/i.test(t)?"OUR MENU":categories[catNo++%Math.max(1,categories.length)]||"MENU";
    else if(font(e)>55&&i!==nameIndex&&!numeric(t))value="OUR MENU";
   }
