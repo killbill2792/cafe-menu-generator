@@ -35,12 +35,13 @@ main.write_text(s)
 owner=Path('apps/editor/src/io/db.ts')
 s=owner.read_text();anchor="const DB_NAME = 'tavla';"
 assert anchor in s
-s=s.replace(anchor,"const nativeTenant = new URL(location.href).searchParams.get('seiyun_owner');\\nconst DB_NAME = nativeTenant && /^[a-f0-9-]{36}$/i.test(nativeTenant) ? 'seiyun-native-'+nativeTenant : 'tavla';")
-s=s.replace('\\n','\\n')
+s=s.replace(anchor,"""const nativeTenant = new URL(location.href).searchParams.get('seiyun_owner');
+const DB_NAME = nativeTenant && /^[a-f0-9-]{36}$/i.test(nativeTenant) ? 'seiyun-native-'+nativeTenant : 'tavla';""")
 owner.write_text(s)
 ids=Path('apps/editor/src/io/designs.ts')
 s=ids.read_text();anchor="const dbName = (id: string) => `tavla-design-${id}`;";assert anchor in s
-s=s.replace(anchor,"const nativeTenant = new URL(location.href).searchParams.get('seiyun_owner');\\nconst dbName = (id: string) => nativeTenant && /^[a-f0-9-]{36}$/i.test(nativeTenant) ? `seiyun-native-${nativeTenant}-design-${id}` : `tavla-design-${id}`;")
+s=s.replace(anchor,"""const nativeTenant = new URL(location.href).searchParams.get('seiyun_owner');
+const dbName = (id: string) => nativeTenant && /^[a-f0-9-]{36}$/i.test(nativeTenant) ? `seiyun-native-${nativeTenant}-design-${id}` : `tavla-design-${id}`;""")
 ids.write_text(s)
 
 editor=Path('apps/editor/src/editor/EditorScreen.tsx')
