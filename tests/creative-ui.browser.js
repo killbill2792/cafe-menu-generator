@@ -103,7 +103,7 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  await page.locator('[data-cs-motion="ingredient-motion"]').click();
  await page.locator('[data-scene="ingredient-motion"]').waitFor({timeout:12000});
  assert.equal(await page.locator('.cs-hero-img').count(),1,'scene change keeps one hero drink');
- await page.locator('.cs-hero-product').click();
+ await page.locator('.cs-hero-product').click({force:true}); // continuously animated: ordinary Playwright click waits for static layout
  await page.locator('.moveable-control-box').first().waitFor({timeout:6000});
  assert.equal(await page.locator('[data-scene-layer="hero"]').count(),1,'hero layer is independently selectable for drag/resize');
  const heroBox=await page.locator('.cs-hero-product').boundingBox();
