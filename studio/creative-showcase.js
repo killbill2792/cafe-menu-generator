@@ -23,6 +23,19 @@ async function mount(host,state,cfg,core,notify){
  if(!root||!hero)return;
  const token=sceneToken;
  scene={host,root,hero,beam,ring,raf:0,elapsed:0,last:0,cfg,product:p,token};
+ // Studio white-background photographs become a transparent preview derivative in memory.
+ // No storage mutation, no AI call, no need to upload a second photo.
+ const raw=core.selectedShowcasePhoto(p);
+ if(cfg.autoCutout!==false&&raw&&window.SeiyunPhotoCutout){
+  loadImage(raw).then(image=>window.SeiyunPhotoCutout.make(image)).then(result=>{
+   if(token!==sceneToken||!host.isConnected||!result.changed)return;
+   const clean=result.asset.toDataURL('image/png');
+   const image=hero.querySelector('img');if(image)image.src=clean;
+   document.querySelectorAll('.cs-scene-choice-img').forEach(img=>{
+    if(img.getAttribute('src')===raw)img.src=clean;
+   });
+  }).catch(()=>{/* Original stays visible when storage CORS prevents local pixel access. */});
+ }
  function advance(now){
   if(!scene||token!==sceneToken||!host.isConnected)return;
   if(scene.last&&!paused)scene.elapsed+=Math.min(100,now-scene.last);
@@ -32,7 +45,7 @@ async function mount(host,state,cfg,core,notify){
   const f=scenes.frameAt(percent,choice.id,own.speed);
   const scale=choice.layers.hero.scale*f.heroScale;
   hero.style.animation='none';
-  hero.style.transform='translate(-50%,-50%) scale('+choice.layers.hero.scale+')';
+  hero.style.transform='translate(-50%,-50%) translateY('+f.heroY+'%) scale('+scale+')';
   if(beam){beam.style.animation='none';beam.style.transform='translateX('+(f.lightX-50)*1.25+'%) rotate(-12deg)';}
   if(ring){ring.style.animation='none';ring.style.transform='translate(-50%,-50%) rotate('+f.ringRotation+'deg) scale('+(0.93+f.glow*.08)+')';}
   scene.raf=requestAnimationFrame(advance);
@@ -43,7 +56,7 @@ function toggle(){if(!scene)return;paused=!paused;}
 function update(state,cfg,core){if(scene){scene.cfg=cfg;}}
 function loadImage(src){return new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=()=>reject(Error('Product photograph could not load with export permission. Check Storage access/CORS or upload a PNG directly.'));img.src=src;});}
 async function assets(state,cfg,core){const p=productFor(state,cfg,core),src=core.selectedShowcasePhoto(p);if(!p||!src)throw Error('Upload or select a product photograph first.');
-const photo=await loadImage(src);return {photo,product:p};}
+const image=await loadImage(src),photo=cfg.autoCutout===false?image:(window.SeiyunPhotoCutout?.make(image).asset||image);return {photo,product:p};}
 function renderFrame(ctx,photo,p,brand,cfg,mod,progress,w,h,state){
  if(!window.SeiyunCinematicScenes)throw Error('Cinematic scene renderer is unavailable');
  window.SeiyunCinematicScenes.drawFrame(ctx,photo,p,brand,cfg,progress,w,h);
