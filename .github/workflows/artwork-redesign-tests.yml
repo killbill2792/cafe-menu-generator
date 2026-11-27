@@ -12,6 +12,7 @@ on:
       - 'studio/menu-gallery.*'
       - 'tests/open-template-adapter.test.js'
       - 'tests/gallery-real-preview.test.js'
+      - 'tests/creative-layout.test.js'
       - 'tests/cinematic-scenes.test.js'
       - 'tests/creative-ui.browser.js'
       - '.github/workflows/artwork-redesign-tests.yml'
@@ -25,7 +26,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/open-template-adapter.test.js tests/cinematic-scenes.test.js tests/gallery-real-preview.test.js
+      - run: node --test tests/open-template-adapter.test.js tests/cinematic-scenes.test.js tests/gallery-real-preview.test.js tests/creative-layout.test.js
   integration:
     runs-on: ubuntu-24.04
     steps:
