@@ -147,7 +147,7 @@ document.addEventListener('click',ev=>{
  ev.preventDefault();ev.stopImmediatePropagation();
  const original=el.textContent;el.contentEditable='true';el.setAttribute('role','textbox');el.focus();
  el.addEventListener('blur',()=>{
-  const field=el.dataset.csEdit,id=el.closest('[data-menu-product]')?.dataset.menuProduct||showcase().productId;
+  const field=el.dataset.csEdit,id=el.dataset.csProductId||el.closest('[data-menu-product]')?.dataset.menuProduct||showcase().productId;
   const ok=core.applyInlineEdit(draft,{field:field==='showcase.title'?'name':field,productId:id,value:el.textContent,sizeIndex:Number(el.dataset.csPriceIndex)||0});
   el.removeAttribute('contenteditable');if(ok&&el.textContent!==original)save();if(tab==='menu')refreshMenu();else render();
  },{once:true});
