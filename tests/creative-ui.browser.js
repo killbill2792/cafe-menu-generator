@@ -53,8 +53,10 @@ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  assert.equal(await page.locator('.cs-hero-img').count(),1,'one featured drink, never a collection of moving copies');
  assert.equal(await page.locator('.scene-card').count(),0,'no old Motion Lab photo gallery');
  assert((await page.locator('[data-environment-layer]').count())>=3,'actual layered environment exists');
- const current=await page.locator('.cs-cinematic-beam').evaluate(el=>getComputedStyle(el).animationName);
- assert.notEqual(current,'none','hero scene has moving environmental light');
+ const beamBefore=await page.locator('.cs-cinematic-beam').evaluate(el=>getComputedStyle(el).transform);
+ await page.waitForTimeout(550);
+ const beamAfter=await page.locator('.cs-cinematic-beam').evaluate(el=>getComputedStyle(el).transform);
+ assert.notEqual(beamBefore,beamAfter,'hero light visibly moves under the shared cinematic timeline');
  await page.locator('[data-cs-motion="ingredient-motion"]').click();
  await page.locator('[data-scene="ingredient-motion"]').waitFor({timeout:12000});
  assert.equal(await page.locator('.cs-hero-img').count(),1,'scene change keeps one hero drink');
